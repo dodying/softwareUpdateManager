@@ -9,9 +9,12 @@
 
 let install = (from, to) => {
   let killed = require('./kill_single')(from, to)
+  let fs = require('fs-extra')
   if (!killed) return false
   try {
-    require('fs-extra').copyFileSync(from, to)
+    let dir = require('path').parse(to).dir
+    fs.mkdirsSync(dir)
+    fs.copySync(from, to)
     return true
   } catch (error) {
     console.log(error)

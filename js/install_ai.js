@@ -1,35 +1,27 @@
 'use strict'
 
 /**
- * @description regard the install pack as a zipped file
+ * @description regard the install pack as Advanced Installer
  * @returns {boolean} if install completed
  * @param {string} from A path to the install pack file.
  * @param {string} to A path to the bin file.
  * @param {(string | array)} excludes what files you don't want to install
- * @param {string} filterInZip The filter to real install pack in zipped file
+ * @param {string} filter The filter to path
  */
 
-let install = (from, to, excludes = undefined, filterInZip = '') => {
-  const fse = require('fs-extra')
+let install = (from, to, excludes = undefined, filter) => {
   const path = require('path')
+  const fse = require('fs-extra')
   const cp = require('child_process')
 
-  try {
-    cp.execSync(`plugins\\7z.exe t "${from}"`)
-  } catch (error) {
-    fse.unlinkSync(from)
-    console.error(`Output:\t${from}\nError:\tFile Error`)
-    return false
-  }
-
   let install = () => {
-    let { dir: parentPath, name } = path.parse(to)
+    let { dir: parentPath } = path.parse(to)
 
     while (parentPath.split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 
-    cp.execSync(`plugins\\7z.exe x -y -o"unzip\\${name}\\" "${from}" ${filterInZip || ''}`)
+    cp.execSync(`"${from}" /extract "${path.parse(__dirname).dir}\\unzip\\"`)
     let opt = {
       filter: (src, dest) => {
         let arr = require('./../config').excludeGlobal
@@ -41,19 +33,18 @@ let install = (from, to, excludes = undefined, filterInZip = '') => {
         return true
       }
     }
-    let fromNew = `unzip\\${name}`
-    let list = fse.readdirSync(fromNew)
-    while (list.length === 1) {
-      fromNew = path.resolve(fromNew, list[0])
-      if (!fse.statSync(fromNew).isDirectory()) {
-        fromNew = path.parse(fromNew).dir
-        break
+    let fromNew = fse.readdirSync('unzip')
+    fromNew = path.join('unzip', fromNew[0])
+    if (filter) {
+      let lst = require('./walk')(fromNew)
+      fromNew = lst.filter(i => path.relative(fromNew, i).match(filter))
+      if (fromNew.length) {
+        fromNew = fromNew[0]
+      } else {
+        console.error(`Error:\tCan get match path in "install_ai.js"`)
       }
-      list = fse.readdirSync(fromNew)
     }
-
     fse.copySync(fromNew, parentPath, opt)
-    return true
   }
 
   let killed = require('./kill')(from, to)

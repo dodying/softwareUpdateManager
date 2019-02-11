@@ -23,18 +23,18 @@ let kill = (from, to) => {
   if (running) {
     console.log(running)
     let choose = [
-      'Kill immediately (may with data losed)',
+      'Not Kill (skip install this software)',
       'Kill manually (wait until you kill process)',
-      'Not Kill (skip install this software)'
+      'Kill immediately (may with data losed)'
     ]
     choose = readlineSync.keyInSelect(choose, 'Do you want to kill process?')
     if (choose === 0) {
-      cp.execSync(`wmic process where ExecutablePath="'${from.replace(/[/\\]/g, '\\\\')}" delete`).toString()
+      console.error(`Software:\t${name}\nError:\tSkipped\nLocation:\t${from}\nTarget:\t${to}`)
+      return false
     } else if (choose === 1) {
       readlineSync.keyInPause('Press any key to continue')
     } else if (choose === 2) {
-      console.error(`Software:\t${name}\nError:\tSkipped\nLocation:\t${from}\nTarget:\t${to}`)
-      return false
+      cp.execSync(`wmic process where ExecutablePath="'${from.replace(/[/\\]/g, '\\\\')}" delete`).toString()
     }
     return require('./kill_single')(from, to)
   }

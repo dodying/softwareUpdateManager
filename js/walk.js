@@ -15,6 +15,7 @@ let walk = function (dir) {
   list.forEach(function (file) {
     let path = dir + separator + file
     if (fs.existsSync(path) && fs.statSync(path).isDirectory()) {
+      output.push(path)
       output = output.concat(walk(path))
     } else {
       output.push(path)

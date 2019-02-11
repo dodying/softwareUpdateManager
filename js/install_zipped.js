@@ -3,28 +3,38 @@
 /**
  * @description regard the install pack as a zipped file which contains a real install pack
  * @returns {boolean} if install completed
- * @param {string} js A js or function to call next
  * @param {string} from A path to the install pack file.
  * @param {string} to A path to the bin file.
- * @param {string} filterInZip The filter to real install pack in zipped file
+ * @param {(string | function)} js A js or function to call next
  * @param {string} filter The filter to real install pack
- * @param {(string | array)} excludes what files you don't want to install
+ * @param {string} args other args for js
  */
 
-let install = (js, from, to, filterInZip = '', filter = undefined, excludes = undefined) => {
+let install = (from, to, js, filter = undefined, ...args) => {
   const path = require('path')
   const fse = require('fs-extra')
+  const cp = require('child_process')
 
-  require('child_process').execSync(`plugins\\7z.exe e -y -o"archive\\unzip" "${from}" ${filterInZip}`)
-  let list = fse.readdirSync('archive\\unzip')
+  try {
+    cp.execSync(`plugins\\7z.exe t "${from}"`)
+  } catch (error) {
+    fse.unlinkSync(from)
+    console.error(`Output:\t${from}\nError:\tFile Error`)
+    return false
+  }
+
+  cp.execSync(`plugins\\7z.exe x -y -o"unzip" "${from}"`)
+  let list = require('./walk')('unzip').map(i => i.replace(/^unzip(\\|\/)/, ''))
+
+  list = list.filter(i => fse.statSync(path.resolve('./unzip', i)).isFile())
   let fromNew = filter ? list.filter(i => i.match(filter))[0] : list[0]
-  fromNew = path.resolve(path.parse(from).dir, 'unzip', fromNew)
+  fromNew = path.resolve('./unzip', fromNew)
 
   let installed
   if (typeof js === 'string' && require('./' + js)) {
-    installed = require('./' + js)(fromNew, to, excludes)
+    installed = require('./' + js)(fromNew, to, ...args)
   } else if (typeof js === 'function') {
-    installed = js(fromNew, to, excludes)
+    installed = js(fromNew, to)
   }
 
   return installed
