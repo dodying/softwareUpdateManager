@@ -1,4 +1,10 @@
+node_modules
 archive
+html
 unzip
+plugins
 database.json
+database-*.json
 config.js
+cookies.txt
+cmd.bat

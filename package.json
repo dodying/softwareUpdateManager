@@ -6,15 +6,22 @@
   "author": "dodying",
   "license": "MIT",
   "scripts": {
-    "start": "node index"
+    "start": "node index.js",
+    "help": "node index.js -help"
   },
   "dependencies": {
     "cheerio": "^1.0.0-rc.2",
-    "fs-extra": "^6.0.1",
-    "node-notifier": "^5.2.1",
+    "deepmerge": "^3.1.0",
+    "fs-extra": "^7.0.1",
+    "node-notifier": "^5.4.0",
     "readline-sync": "^1.4.9",
+    "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "socks5-http-client": "^1.0.4",
     "socks5-https-client": "^1.2.1"
-  }
+  },
+  "private": true,
+  "keywords": [],
+  "bin": {},
+  "devDependencies": {}
 }
