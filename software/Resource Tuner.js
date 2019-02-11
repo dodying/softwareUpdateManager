@@ -1,8 +1,7 @@
 'use strict'
 
 let data = {
-  commercial: true,
-  useProxy: true,
+  commercial: 3,
   url: 'http://www.restuner.com/news-history.htm',
   version: {
     selector: '#content h1+p~p>b'

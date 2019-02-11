@@ -1,13 +1,27 @@
+// 'use strict'
+
+// let data = {
+//   url: 'https://otp.landian.la/zh-cn/',
+//   version: {
+//     selector: '.templatemo_homewrapper p'
+//   },
+//   download: {
+//     selector: '.templatemo_homewrapper a'
+//   },
+//   install: function (output, iPath) {
+//     return require('./../js/install')(output, iPath)
+//   }
+// }
+// module.exports = data
 'use strict'
 
 let data = {
-  url: 'https://otp.landian.la/zh-cn/',
+  url: 'https://mirrors.yuntu.ca/office-tool/',
   version: {
-    selector: '.templatemo_homewrapper p'
+    func: async (res, $) => $('.fb-n>a').map((i, j) => $(j).text()).toArray().filter(i => i.match('Office Tool')).reverse()[0].match(/Office Tool v(.*)\.zip/)[1]
   },
   download: {
-    selector: '.templatemo_homewrapper a',
-    attr: 'href'
+    plain: 'https://mirrors.yuntu.ca/office-tool/Office%20Tool%20v{version}.zip'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

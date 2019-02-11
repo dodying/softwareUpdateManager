@@ -1,14 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/cyfdecyf/cow/releases/latest',
   version: {
-    selector: '.release .css-truncate-target'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href*="win64"][href$=".zip"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href*="win64"][href$=".zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

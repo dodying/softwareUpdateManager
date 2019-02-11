@@ -1,15 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
-  url: 'https://zealdocs.org/download.html',
+  url: 'https://github.com/zealdocs/zeal/releases/latest',
   version: {
-    selector: 'a[href*="portable"][href$="x64.7z"]',
-    attr: 'href'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href*="portable"][href$="x64.7z"]',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href*="portable"][href$="x64.7z"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

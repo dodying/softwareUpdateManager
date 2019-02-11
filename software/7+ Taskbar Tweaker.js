@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://rammichael.com/downloads/7tt_setup.exe?changelog',
   version: {
     selector: 'b'

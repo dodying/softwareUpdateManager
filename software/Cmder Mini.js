@@ -1,13 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/cmderdev/cmder/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$="mini.zip"]:has(small.text-gray)'
+    selector: 'a[href*="/releases/download/"][href$="mini.zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

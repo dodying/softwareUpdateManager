@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://sourceforge.net/projects/xlideit/files',
   version: {
     selector: 'a.download .sub-label'
@@ -11,7 +10,7 @@ let data = {
     output: '.zip'
   },
   install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+    return require('./../js/install_zipped')(output, iPath, 'install_single')
   }
 }
 module.exports = data

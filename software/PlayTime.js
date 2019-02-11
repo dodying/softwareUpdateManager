@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'http://www.dcmembers.com/skwire/download/playtime/',
   version: {
     selector: 'a.wpdm-download-link'

@@ -6,8 +6,7 @@ let data = {
     selector: 'a[href$="Windows_x64.zip"]'
   },
   download: {
-    selector: 'a[href$="Windows_x64.zip"]',
-    attr: 'href'
+    selector: 'a[href$="Windows_x64.zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath, [''])

@@ -1,14 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/iawia002/annie/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$="Windows_64-bit.zip"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$="Windows_64-bit.zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

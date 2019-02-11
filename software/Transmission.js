@@ -1,16 +1,16 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/transmission/transmission/releases/latest',
+  preferPath: 'transmission-qt.exe',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
     plain: 'https://github.com/transmission/transmission-releases/raw/master/transmission-{version}-x64.msi'
   },
   install: function (output, iPath) {
-    return require('./../js/install_msi')(output, iPath)
+    return require('./../js/install_msi')(output, iPath, null, data.preferPath)
   }
 }
 module.exports = data

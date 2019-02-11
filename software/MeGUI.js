@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://sourceforge.net/projects/megui/files',
   version: {
     selector: 'a.download .sub-label'

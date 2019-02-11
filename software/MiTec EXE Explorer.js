@@ -9,7 +9,7 @@ let data = {
     plain: 'http://www.mitec.cz/Downloads/EXE.zip'
   },
   install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+    return require('./../js/install_zipped')(output, iPath, 'install_single')
   }
 }
 module.exports = data

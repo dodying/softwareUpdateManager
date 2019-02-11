@@ -1,17 +1,16 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/LorenzCK/OnTopReplica/releases/latest',
+  preferPath: 'OnTopReplica.exe',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$=".zip"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$=".zip"]'
   },
   install: function (output, iPath) {
-    return require('./../js/install_zipped')('install_msi', output, iPath, '*.msi')
+    return require('./../js/install_zipped')(output, iPath, 'install_msi', null, null, data.preferPath)
   }
 }
 module.exports = data

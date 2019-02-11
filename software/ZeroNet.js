@@ -1,10 +1,9 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/HelloZeroNet/ZeroNet/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
     plain: 'https://github.com/HelloZeroNet/ZeroNet-win/archive/dist/ZeroNet-win.zip'

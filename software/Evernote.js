@@ -7,8 +7,7 @@ let data = {
     attr: 'href'
   },
   download: {
-    selector: 'h1+p>a',
-    attr: 'href'
+    selector: 'h1+p>a'
   }
 }
 module.exports = data

@@ -1,14 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/dziemborowicz/hourglass/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$="Portable.exe"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$="Portable.exe"]'
   },
   install: function (output, iPath) {
     return require('./../js/install_single')(output, iPath)

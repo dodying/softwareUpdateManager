@@ -1,14 +1,13 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/Bioruebe/UniExtract2/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate',
+    match: /v(.*)/
   },
   download: {
-    selector: 'a[href$=".zip"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$=".zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

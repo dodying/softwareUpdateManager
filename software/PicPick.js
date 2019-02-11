@@ -1,7 +1,7 @@
 'use strict'
 
 let data = {
-  useProxy: true,
+  commercial: 1,
   url: 'https://picpick.app/zh/download',
   version: {
     selector: 'h3+div'

@@ -1,7 +1,7 @@
 'use strict'
 
 let data = {
-  commercial: true,
+  commercial: 2,
   url: 'http://blog.utorrent.com/releases/windows/',
   version: {
     selector: '.entry-title'

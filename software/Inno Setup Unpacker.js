@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   // url: 'http://innounp.sourceforge.net/',
   url: 'https://sourceforge.net/projects/innounp/files/innounp/',
   version: {
@@ -13,7 +12,7 @@ let data = {
     output: '.rar'
   },
   install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+    return require('./../js/install_zipped')(output, iPath, 'install_single', 'innounp.exe')
   }
 }
 module.exports = data

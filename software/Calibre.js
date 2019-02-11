@@ -1,19 +1,20 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/kovidgoyal/calibre/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href*="portable"]:has(small.text-gray)',
-    attr: 'href'
+    plain: 'https://calibre-ebook.com/dist/portable',
+    output: '.exe'
   },
   install: function (output, iPath) {
     let killed = require('./../js/kill')(output, iPath)
     if (!killed) return false
-    let parentPath = require('path').parse(iPath).dir
+    let path = require('path')
+    let parentPath = path.parse(iPath).dir
+    parentPath = path.parse(parentPath).dir
     require('child_process').execSync(`"${output}" "${parentPath}"`)
     return true
   }

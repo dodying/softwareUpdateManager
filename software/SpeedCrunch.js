@@ -6,8 +6,7 @@ let data = {
     selector: 'h1'
   },
   download: {
-    selector: '.dl-button[href$="win32.exe"]',
-    attr: 'href'
+    selector: '.dl-button[href$="win32.exe"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

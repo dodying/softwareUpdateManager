@@ -1,16 +1,15 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/yinghuocho/firefly-proxy/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    plain: 'https://raw.githubusercontent.com/xiayhc/yhc/master/greenyhc.exe'
+    selector: 'a[href*="/releases/download/"][href*="windows"][href$=".bz2"]'
   },
   install: function (output, iPath) {
-    return require('./../js/install_single')(output, iPath)
+    return require('./../js/install_zipped')(output, iPath, 'install_single')
   }
 }
 module.exports = data

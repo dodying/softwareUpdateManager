@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'http://z-o-o-m.eu/down.htm',
   version: {
     selector: '#content a'

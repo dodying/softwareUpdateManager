@@ -1,14 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://apps.ankiweb.net/',
   version: {
     selector: '#windows a.btn'
   },
   download: {
-    selector: '#windows a.btn',
-    attr: 'href'
+    selector: '#windows a.btn'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

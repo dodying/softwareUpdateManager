@@ -1,14 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/v2ray/v2ray-core/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$="windows-64.zip"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$="windows-64.zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

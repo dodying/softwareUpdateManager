@@ -2,12 +2,12 @@
 
 let data = {
   useProxy: true,
-  url: 'https://github.com/freegate-release/website/',
+  url: 'https://www.filehorse.com/download-freegate/download/',
   version: {
-    selector: 'article.markdown-body h3'
+    selector: '.pageing>li:nth-child(3)'
   },
   download: {
-    plain: 'https://raw.githubusercontent.com/freegate-release/website/gh-pages/files/fgp.exe'
+    selector: '#download_url'
   },
   install: function (output, iPath) {
     return require('./../js/install_single')(output, iPath)

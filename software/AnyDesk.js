@@ -1,7 +1,7 @@
 'use strict'
 
 let data = {
-  commercial: true,
+  commercial: 1,
   url: 'https://anydesk.com/platforms/windows',
   version: {
     selector: '#updates .u-type-bold'

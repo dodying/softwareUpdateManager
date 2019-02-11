@@ -6,8 +6,7 @@ let data = {
     selector: '.subh2'
   },
   download: {
-    selector: '.butt-holder a[href$=".zip"]',
-    attr: 'href'
+    selector: '.butt-holder a[href$=".zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

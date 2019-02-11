@@ -1,17 +1,16 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/yingDev/WGestures/releases/latest',
+  preferPath: 'WGestures.exe',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$=".zip"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$=".zip"]'
   },
   install: function (output, iPath) {
-    return require('./../js/install_zipped')('install_msi', output, iPath)
+    return require('./../js/install_zipped')(output, iPath, 'install_msi', null, null, data.preferPath)
   }
 }
 module.exports = data

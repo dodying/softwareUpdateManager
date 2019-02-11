@@ -1,7 +1,6 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://sourceforge.net/projects/docfetcher/files',
   version: {
     selector: 'a.download .sub-label'

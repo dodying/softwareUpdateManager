@@ -1,14 +1,15 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/BiglySoftware/BiglyBT/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link.css-truncate'
   },
   download: {
-    selector: 'a[href$="Installer64.exe"]:has(small.text-gray)',
-    attr: 'href'
+    selector: 'a[href*="/releases/download/"][href$=".jar"]'
+  },
+  install: function (output, iPath) {
+    return require('./../js/install_single')(output, iPath)
   }
 }
 module.exports = data

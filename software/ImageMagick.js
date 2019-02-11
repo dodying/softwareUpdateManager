@@ -1,17 +1,17 @@
 'use strict'
 
 let data = {
-  url: 'http://www.imagemagick.org/script/download.php#windows',
+  url: 'https://imagemagick.org/script/download.php',
   version: {
     selector: 'a[href*="portable"][href$="x64.zip"]',
-    attr: 'href'
+    attr: 'href',
+    match: /(\d+[\d.-]+\d+)/
   },
   download: {
-    selector: 'a[href*="portable"][href$="x64.zip"]',
-    attr: 'href'
+    selector: 'a[href*="portable"][href$="x64.zip"]'
   },
   install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+    return require('./../js/install')(output, iPath, ['www', 'index.html', 'images'])
   }
 }
 module.exports = data

@@ -4,7 +4,7 @@ let data = {
   useProxy: true,
   url: 'http://wujieliulan.com/',
   version: {
-    selector: '#Right+div'
+    selector: '#Right+div:has(a[href="http://wujieliulan.com/download/u.exe"])'
   },
   download: {
     plain: 'http://wujieliulan.com/download/u.exe'

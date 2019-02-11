@@ -1,7 +1,7 @@
 'use strict'
 
 let data = {
-  useProxy: true,
+  commercial: 1,
   url: 'http://www.kls-soft.com/wscc/downloads.php',
   version: {
     selector: '.graytext'

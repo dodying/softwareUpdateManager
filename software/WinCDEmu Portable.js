@@ -7,8 +7,7 @@ let data = {
     attr: 'href'
   },
   download: {
-    selector: '.download_button',
-    attr: 'href'
+    selector: '.download_button'
   },
   install: function (output, iPath) {
     return require('./../js/install_single')(output, iPath)

@@ -6,8 +6,7 @@ let data = {
     selector: 'h1+p'
   },
   download: {
-    selector: '.Item>a[href$="x64.exe"]',
-    attr: 'href'
+    selector: '.Item>a[href$="x64.exe"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

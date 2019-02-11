@@ -1,14 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://quest-app.appspot.com/',
   version: {
     selector: 'a[title="Download QTranslate"]'
   },
   download: {
-    selector: 'a[title="Download QTranslate"]',
-    attr: 'href'
+    selector: 'a[title="Download QTranslate"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

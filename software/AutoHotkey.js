@@ -9,13 +9,12 @@ let data = {
     plain: 'https://www.autohotkey.com/download/ahk.zip'
   },
   install: function (output, iPath) {
-    let installed = require('./../js/install')(output, iPath)
-    if (installed) {
-      const path = require('path')
-      let parentPath = path.parse(iPath).dir
-      require('fs-extra').copySync(path.resolve(parentPath, 'AutoHotkeyU64.exe'), path.resolve(parentPath, 'AutoHotkey.exe'))
-    }
-    return installed
+    return require('./../js/install')(output, iPath)
+  },
+  afterInstall: function (output, iPath) {
+    let path = require('path')
+    let parentPath = path.parse(iPath).dir
+    require('fs').copyFileSync(path.resolve(parentPath, 'AutoHotkeyU64.exe'), path.resolve(parentPath, 'AutoHotkey.exe'))
   }
 }
 module.exports = data

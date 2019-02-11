@@ -6,8 +6,7 @@ let data = {
     selector: '.color-lightgray>strong'
   },
   download: {
-    selector: '.download-matrix a[href$="x64.zip"]',
-    attr: 'href'
+    selector: '.download-matrix a[href$="x64.zip"]'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

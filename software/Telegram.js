@@ -1,46 +1,55 @@
 'use strict'
 
 let data = {
-  // ?commercial: true/false,
+  // ?commercial:
+  // 1. boolean: false=Free true=Commercial
+  // 2. number: 0=Free 1=FreePersonal 2=Freemium 3=Commercial
+
   // ?useProxy: true/false,
-  useProxy: true,
+  // ?withoutHeader: true/false,
   url: 'https://github.com/telegramdesktop/tdesktop/releases/latest',
+  // ?preferPath: 'preferPath',
   version: {
-    selector: '.release-header a'
-    // attr:
+    selector: '.muted-link.css-truncate'
+    // ?attr:
     // 1. text or omitted => text()
     // 2. html => html()
     // 3. other => attr(other)
     //
     // ?match:
-    // 1. omitted => /([\d.]+)/[1]
+    // 1. omitted => /(\d+[\d.]+\d+)/[1]
     // 2. /other/ => /other/[1]
     // ---
-    // or func: async (res, $) => { return version }
+    // or func: async (res, $, req, cheerio) => { return version }
   },
   /**
    * download:
    * omitted => open url
    */
   download: {
-    // --- mode 0
-    // selector: 'a:contains("Download Portable Zip 64-bit")',
-    // attr: 'href',
-    // match: '', // omitted => /(.*)/[1]
-    // --- mode 1
+    // --- mode 0 ---
     // plain: 'url/to/download'
     //   you can use variables with {}
     //   defined variables:
     //     version: the latest version
-    // --- mode 2
-    // func: async (res, $) => { return url }
-    selector: 'a[href$=".zip"]:has(small.text-gray)',
-    attr: 'href',
+    //
+    // --- mode 1 ---
+    selector: 'a[href*="/releases/download/"][href$=".zip"]'
+    // ?attr:
+    // 1. omitted => attr('href')
+    // 2. text => text()
+    // 3. html => html()
+    // 4. other => attr(other)
+    //
+    // ?match: '', // omitted => /(.*)/[1]
+    //
+    // --- mode 2 ---
+    // func: async (res, $, req, cheerio) => { return url }
+
     // ?output:
-    // save to which
-    // if start with .(dot), it'll be named as software + output
-    // or omitted: software + extension according to download url
-    output: 'Telegram.zip' // this is same as '.zip' or omitted
+    // save to which extension, format: '.ext'
+    // eg: output='.zip', it'll be named as 'Telegram-version.zip'
+    // or omitted: extension according to download url
   },
   /**
    * omitted => install manually

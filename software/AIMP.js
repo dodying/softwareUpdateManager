@@ -1,16 +1,12 @@
 'use strict'
 
 let data = {
-  useProxy: true,
-  url: 'http://www.aimp.ru/?do=download',
+  url: 'http://www.aimp.ru/?do=download&os=windows',
   version: {
-    selector: 'a:contains("AIMP.RU")',
-    attr: 'href',
-    match: /(\d+[\d.]+).exe/
+    selector: 'h1'
   },
   download: {
-    selector: 'a:contains("AIMP.RU")',
-    attr: 'href'
+    selector: 'a:contains("Programki.net")'
   },
   install: function (output, iPath) {
     let killed = require('./../js/kill')(output, iPath)
