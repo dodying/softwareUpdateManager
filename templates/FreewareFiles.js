@@ -1,12 +1,13 @@
 'use strict'
 
 let data = {
-  url: 'https://www.filehorse.com/download-evernote/download/',
+  url: 'https://www.freewarefiles.com/Discord-Download-Page-108759.html',
   version: {
-    selector: '.pageing>li:nth-child(3)'
+    selector: '.download-title>a'
   },
   download: {
-    selector: '#download_url'
+    selector: '.dwnlocations',
+    output: '.exe'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

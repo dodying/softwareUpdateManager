@@ -1,10 +1,9 @@
 'use strict'
 
 let data = {
-  useProxy: true,
   url: 'https://github.com/aria2/aria2/releases/latest',
   version: {
-    selector: '.release-header a'
+    selector: '.muted-link'
   },
   download: {
     selector: 'a[href*="win-64bit"][href$=".zip"]:has(small.text-gray)',

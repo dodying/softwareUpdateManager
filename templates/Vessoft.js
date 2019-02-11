@@ -1,12 +1,12 @@
 'use strict'
 
 let data = {
-  url: 'https://www.filehorse.com/download-evernote/download/',
+  url: 'https://zh.vessoft.com/software/windows/download/minecraft',
   version: {
-    selector: '.pageing>li:nth-child(3)'
+    selector: '.dd'
   },
   download: {
-    selector: '#download_url'
+    selector: '#js_download_link'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)

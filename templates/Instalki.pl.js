@@ -1,12 +1,12 @@
 'use strict'
 
 let data = {
-  url: 'https://www.filehorse.com/download-evernote/download/',
+  url: 'https://www.instalki.pl/programy/pobierz/Windows/komunikatory/Discord.html',
   version: {
-    selector: '.pageing>li:nth-child(3)'
+    selector: '.breadcrumbs'
   },
   download: {
-    selector: '#download_url'
+    selector: '#link'
   },
   install: function (output, iPath) {
     return require('./../js/install')(output, iPath)
