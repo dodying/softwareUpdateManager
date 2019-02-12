@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.0.584
+// @Version:            1.0.587
 // @Author:             dodying
-// @Date:               2019-2-10 14:08:18
+// @Date:               2019-2-12 12:59:08
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request-promise,socks5-http-client,socks5-https-client
@@ -230,6 +230,7 @@ if (args.length) {
       if (fse.statSync(path.resolve('software', list[i])).isFile()) {
         let info = require(path.resolve('software', list[i]))
         let name = list[i].replace(/\.js$/, '')
+        let src = encodeURI(list[i])
 
         software += `${i + 1}. `
         software += `[${name}](${info.url})`
@@ -246,17 +247,17 @@ if (args.length) {
 
         if (!info.download) {
           softwareWithoutDownload += `${orderForWithoutDownload + 1}. `
-          softwareWithoutDownload += `[${name}](software/${list[i]})`
+          softwareWithoutDownload += `[${name}](software/${src})`
           softwareWithoutDownload += '\n'
           orderForWithoutDownload++
         } else if (!info.install) {
           softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
-          softwareWithoutInstaller += `[${name}](software/${list[i]})`
+          softwareWithoutInstaller += `[${name}](software/${src})`
           softwareWithoutInstaller += '\n'
           orderForWithoutInstaller++
         } else if (info.install && info.install.toString().split(/[\r\n]+/).length > 3) {
           softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
-          softwareSpecialInstaller += `[${name}](software/${list[i]})`
+          softwareSpecialInstaller += `[${name}](software/${src})`
           softwareSpecialInstaller += '\n'
           orderForSpecialInstaller++
         }
@@ -320,9 +321,23 @@ if (!softwareFilter) {
 let softwareList = mode === -2 ? walk('software').filter(i => !i.match('Invalid') && fse.statSync(i).isFile() && path.parse(i).ext === '.js').map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, '')) : Object.keys(_.software)
 
 softwareList.forEach(i => {
+  let match = i.match(/^(.*):(.*)$/)
+  let raw, version
+  if (match) [, raw, version] = match
+
   if (softwareFilter(i)) {
-    if (fse.existsSync(`./software/${i}.js`)) {
-      software[i] = require(`./software/${i}.js`)
+    if (fse.existsSync(`./software/${match ? raw : i}.js`)) {
+      if (match) {
+        software[i] = require(`./software/${raw}.js`)
+        if (software[i].other[version]) {
+          software[i] = merge(software[i], software[i].other[version])
+        } else {
+          console.error(`Software:\t${i}\nError:\tNo Version named "${version}"`)
+          delete software[i]
+        }
+      } else {
+        software[i] = require(`./software/${i}.js`)
+      }
     } else {
       console.error(`Software:\t${i}\nError:\tNo this js in folder "software"`)
     }
@@ -379,6 +394,8 @@ let doBeforeExit = () => {
 }
 
 let getLatestVersion = async (i) => {
+  let iEscaped = i.replace(/[:*?"<>|]/g, '-')
+
   software[i].retry = software[i].retry ? software[i].retry + 1 : 1
   let res
   try {
@@ -391,10 +408,10 @@ let getLatestVersion = async (i) => {
     returnValue = await (async function () {
       let $ = cheerio.load(res.body)
       if (_.debug) {
-        let parentPath = path.parse(`html/${i}.html`).dir
+        let parentPath = path.parse(`html/${iEscaped}.html`).dir
         if (!fse.existsSync(parentPath)) fse.mkdirsSync(parentPath)
-        fse.writeFileSync(`html/${i}.html`, res.body)
-        fse.writeJsonSync(`html/${i}.json`, res, {
+        fse.writeFileSync(`html/${iEscaped}.html`, res.body)
+        fse.writeJsonSync(`html/${iEscaped}.json`, res, {
           spaces: 2,
           replacer: function replacer (key, value) {
             if (key === 'body') return undefined
@@ -429,7 +446,7 @@ let getLatestVersion = async (i) => {
         version = version.length > 1 ? version[1] : version[0]
       } else if ('func' in software[i].version) {
         try {
-          version = await software[i].version.func(res, $, req, cheerio)
+          version = await software[i].version.func(res, $, req, cheerio, software[i].versionChoice)
           if (!version) {
             console.error(`Error:\t"func" return nothing when get version`)
             return null
@@ -458,6 +475,7 @@ let getLatestVersion = async (i) => {
 }
 
 let downloadLatestVersion = async (i, versionLatest, res, $) => {
+  let iEscaped = i.replace(/[:*?"<>|]/g, '-')
   let download
 
   if ('plain' in software[i].download) { // download url is regular
@@ -494,7 +512,7 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
     download = software[i].download.match ? download.match(software[i].download.match)[1] : download
   } else if ('func' in software[i].download) {
     try {
-      download = await software[i].download.func(res, $, req, cheerio)
+      download = await software[i].download.func(res, $, req, cheerio, software[i].downloadChoice)
       if (!download) {
         console.error(`Error:\t"func" return nothing when get download`)
         return null
@@ -522,7 +540,7 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
     }
   }
   if (url.parse(download).host === 'sourceforge.net' && download.match(/\/download$/) && _.download.sfMirror) download = download + '?use_mirror=' + _.download.sfMirror
-  let output = i + '-' + versionLatest + (ext)
+  let output = iEscaped + '-' + versionLatest + (ext)
   output = path.resolve(_.archivePath, output)
   console.log(`Download:\t${download}`)
   console.log(`Output:\t${output}`)
@@ -623,17 +641,19 @@ let installLatestVersion = async (i, output, iPath) => {
       fse.removeSync(path.parse(iPath).dir)
     }
   }
-  let installed = await software[i].install(output, iPath)
+  let installed = await software[i].install(output, iPath, software[i].installChoice)
   if (installed) {
     if ('afterInstall' in software[i]) await software[i].afterInstall(output, iPath)
     if (!_.preserveArchive) fse.removeSync(output)
+  } else {
+    console.error(`Software:\t${i}\nError:\tSkipped\nLocation:\t${output}\nTarget:\t${iPath}`)
   }
   return installed
 }
 
 let init = async () => {
   if (!fse.existsSync(_.archivePath)) fse.mkdirsSync(_.archivePath)
-  if ([0, 1].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) process.exit()
+  if ([-1, 0].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) process.exit()
 
   for (let i in software) {
     doBeforeExit()
@@ -650,6 +670,9 @@ let init = async () => {
     } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode === -1)) {
       continue
     }
+
+    let iEscaped = i.replace(/[:*?"<>|]/g, '-')
+    let iRaw = i.match(/(.*):(.*)$/) ? i.match(/(.*):(.*)$/)[1] : i
 
     if (!(i in database)) database[i] = {}
     let iPath = path.resolve(_.rootPath, _.software[i] || '')
@@ -672,14 +695,14 @@ let init = async () => {
     }
     console.log('\n- - - - - - - - - - -\n')
     console.log(`Software:\t${i}`)
-    if ([-2].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', i + '.js')}`)
+    if ([-2].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}`)
     console.log(`Location:\t${iPath}`)
     console.log(`Version:\t${version}`)
     console.log(`Url:\t${software[i].url}`)
 
     if ([3].includes(mode) && 'install' in software[i]) {
       if (fse.existsSync(iPath) && !versionMax(database[i].version, versionLocal)) continue
-      let name = `${i}-${database[i].version}`
+      let name = `${iEscaped}-${database[i].version}`
       let filter = fse.readdirSync(_.archivePath).filter(j => path.parse(j).name === name)
       if (filter.length === 0) {
         console.error(`Output:\t${name}\nError:\tOutput is not found`)
@@ -718,7 +741,7 @@ let init = async () => {
     }
 
     if ([-1, 0].includes(mode) && !_.preserveOldArchive) {
-      let name = i
+      let name = iEscaped
       let files = fse.readdirSync(_.archivePath).filter(i => {
         let fileName = i.match(/.gz/) ? path.parse(path.parse(i).name).name : path.parse(i).name
         return i.includes(name + '-') && fileName !== name + '-' + versionLatest

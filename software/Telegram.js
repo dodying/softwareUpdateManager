@@ -20,7 +20,7 @@ let data = {
     // 1. omitted => /(\d+[\d.]+\d+)/[1]
     // 2. /other/ => /other/[1]
     // ---
-    // or func: async (res, $, req, cheerio) => { return version }
+    // or func: async (res, $, req, cheerio, choice) => { return version }
   },
   /**
    * download:
@@ -44,7 +44,7 @@ let data = {
     // ?match: '', // omitted => /(.*)/[1]
     //
     // --- mode 2 ---
-    // func: async (res, $, req, cheerio) => { return url }
+    // func: async (res, $, req, cheerio, choice) => { return url }
 
     // ?output:
     // save to which extension, format: '.ext'
@@ -53,7 +53,7 @@ let data = {
   },
   /**
    * omitted => install manually
-   * install: async function(output, iPath)
+   * install: async function(output, iPath, choice)
    * @returns {boolean} if install completed
    * @param {string} output the path to the install pack file.
    * @param {string} iPath the path to the bin file.
@@ -64,6 +64,14 @@ let data = {
   /**
    * beforeInstall: async function(output, iPath)
    * afterInstall: async function(output, iPath)
+   */
+  /**
+   * other: object
+   */
+  /**
+   * versionChoice
+   * downloadChoice
+   * installChoice
    */
 }
 module.exports = data

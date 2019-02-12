@@ -9,16 +9,22 @@ let data = {
     plain: 'http://www.bandisoft.com/honeyview/dl.php?web',
     output: '.exe'
   },
-  install: function (output, iPath) {
+  install: function (output, iPath, choice) {
     const readlineSync = require('readline-sync')
     const fs = require('fs')
     const path = require('path')
     const cp = require('child_process')
 
+    let shell, portable
+    if (choice) {
+      [shell, portable] = choice
+    } else {
+      shell = readlineSync.keyInYNStrict('Do you use context menu in Windows Explorer?')
+      portable = shell ? false : readlineSync.keyInYNStrict('Make it portable?')
+    }
+
     let parentPath = path.parse(iPath).dir
-    let shell = readlineSync.keyInYNStrict('Do you use context menu in Windows Explorer?')
     if (shell) cp.execSync(`regsvr32 /u /s "${parentPath}\\HVShell64.dll"`)
-    let portable = shell ? false : readlineSync.keyInYNStrict('Make it portable?')
     let installed = require('./../js/install')(output, iPath)
     if (installed) {
       if (shell) cp.execSync(`regsvr32 /s "${parentPath}\\HVShell64.dll"`)
@@ -30,6 +36,11 @@ let data = {
       }
     }
     return installed
+  },
+  other: {
+    shell: { installChoice: [true, false] },
+    portable: { installChoice: [false, true] },
+    noshell: { installChoice: [false, false] }
   }
 }
 module.exports = data

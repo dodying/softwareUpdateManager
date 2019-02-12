@@ -9,17 +9,23 @@ let data = {
     plain: 'https://www.bandisoft.com/bandizip/dl.php?web',
     output: '.exe'
   },
-  install: function (output, iPath) {
+  install: function (output, iPath, choice) {
     const readlineSync = require('readline-sync')
     const fs = require('fs')
     const path = require('path')
     const cp = require('child_process')
 
+    let shell, portable
+    if (choice) {
+      [shell, portable] = choice
+    } else {
+      shell = readlineSync.keyInYNStrict('Do you use context menu in Windows Explorer?')
+      portable = shell ? false : readlineSync.keyInYNStrict('Make it portable?')
+    }
+
     let parentPath = path.parse(iPath).dir
     let regDll = `${parentPath}\\data\\RegDll64.exe`
-    let shell
-    if (fs.existsSync(regDll)) shell = readlineSync.keyInYNStrict('Do you use context menu in Windows Explorer?')
-    if (shell) cp.execSync(`${regDll} /calldll "${parentPath}\\bdzshl64.dll" UnregSvr`)
+    if (fs.existsSync(regDll) && shell) cp.execSync(`${regDll} /calldll "${parentPath}\\bdzshl64.dll" UnregSvr`)
 
     try {
       if (fs.existsSync(`${parentPath}\\bdzshl64.dll`)) fs.renameSync(`${parentPath}\\bdzshl64.dll`, `${parentPath}\\bdzshl64.dll.bak`)
@@ -28,7 +34,6 @@ let data = {
       return false
     }
 
-    let portable = shell ? false : readlineSync.keyInYNStrict('Make it portable?')
     let installed = require('./../js/install')(output, iPath)
     if (installed) {
       if (shell) cp.execSync(`${regDll} /calldll "${parentPath}\\bdzshl64.dll" RegSvr`)
@@ -40,6 +45,11 @@ let data = {
       }
     }
     return installed
+  },
+  other: {
+    shell: { installChoice: [true, false] },
+    portable: { installChoice: [false, true] },
+    noshell: { installChoice: [false, false] }
   }
 }
 module.exports = data

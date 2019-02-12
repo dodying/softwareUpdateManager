@@ -13,7 +13,7 @@ let kill = (from, to) => {
   const path = require('path')
 
   let running
-  let { dir: parentPath, name } = path.parse(to)
+  let { dir: parentPath } = path.parse(to)
 
   while (parentPath.split(/[/\\]+/).includes('bin')) {
     parentPath = path.parse(parentPath).dir
@@ -34,7 +34,6 @@ let kill = (from, to) => {
     ]
     choose = readlineSync.keyInSelect(choose, 'Do you want to kill process?')
     if (choose === 0) {
-      console.error(`Software:\t${name}\nError:\tSkipped\nLocation:\t${from}\nTarget:\t${to}`)
       return false
     } else if (choose === 1) {
       readlineSync.keyInPause('Press any key to continue')

@@ -10,10 +10,8 @@
 let kill = (from, to) => {
   const cp = require('child_process')
   const readlineSync = require('readline-sync')
-  const path = require('path')
 
   let running
-  let name = path.parse(to).name
   try {
     running = cp.execSync(`wmic process where ExecutablePath="'${from.replace(/[/\\]/g, '\\\\')}" get ExecutablePath, Caption`).toString()
     if (running.match(/^\s+$/)) running = false
@@ -29,7 +27,6 @@ let kill = (from, to) => {
     ]
     choose = readlineSync.keyInSelect(choose, 'Do you want to kill process?')
     if (choose === 0) {
-      console.error(`Software:\t${name}\nError:\tSkipped\nLocation:\t${from}\nTarget:\t${to}`)
       return false
     } else if (choose === 1) {
       readlineSync.keyInPause('Press any key to continue')
