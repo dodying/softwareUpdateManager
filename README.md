@@ -112,7 +112,7 @@
 
 ### TODO
 
-* [ ] 支持同一软件的不同版本
+* [x] 支持同一软件的不同版本
 * [ ] 从 [FileHorse.com](http://www.filehorse.com/) 等网站搜索并生成相应js
 * [ ] 自动检查安装包类型并安装
 
@@ -146,7 +146,7 @@ let data = {
     // 1. omitted => /(\d+[\d.]+\d+)/[1]
     // 2. /other/ => /other/[1]
     // ---
-    // or func: async (res, $, req, cheerio) => { return version }
+    // or func: async (res, $, req, cheerio, choice) => { return version }
   },
   /**
    * download:
@@ -170,7 +170,7 @@ let data = {
     // ?match: '', // omitted => /(.*)/[1]
     //
     // --- mode 2 ---
-    // func: async (res, $, req, cheerio) => { return url }
+    // func: async (res, $, req, cheerio, choice) => { return url }
 
     // ?output:
     // save to which extension, format: '.ext'
@@ -179,7 +179,7 @@ let data = {
   },
   /**
    * omitted => install manually
-   * install: async function(output, iPath)
+   * install: async function(output, iPath, choice)
    * @returns {boolean} if install completed
    * @param {string} output the path to the install pack file.
    * @param {string} iPath the path to the bin file.
@@ -190,6 +190,14 @@ let data = {
   /**
    * beforeInstall: async function(output, iPath)
    * afterInstall: async function(output, iPath)
+   */
+  /**
+   * other: object
+   */
+  /**
+   * versionChoice
+   * downloadChoice
+   * installChoice
    */
 }
 module.exports = data
@@ -1146,13 +1154,13 @@ module.exports = data
 ###### 特殊的安装方式(作为参考)
 
 1. [AIMP](software/AIMP.js)
-2. [Bandisoft Bandizip](software/Bandisoft Bandizip.js)
-3. [Bandisoft Honeyview](software/Bandisoft Honeyview.js)
+2. [Bandisoft Bandizip](software/Bandisoft%20Bandizip.js)
+3. [Bandisoft Honeyview](software/Bandisoft%20Honeyview.js)
 4. [Calibre](software/Calibre.js)
 5. [Cygwin](software/Cygwin.js)
 6. [FastCopy](software/FastCopy.js)
 7. [GIMP](software/GIMP.js)
-8. [IObit/IObit Unlocker](software/IObit/IObit Unlocker.js)
+8. [IObit/IObit Unlocker](software/IObit/IObit%20Unlocker.js)
 9. [Python](software/Python.js)
 10. [Python2](software/Python2.js)
 
@@ -1160,9 +1168,9 @@ module.exports = data
 ##### Without Download
 ###### 缺失下载
 
-1. [Enigma Virtual Box unpacker](software/Enigma Virtual Box unpacker.js)
-2. [Universal Extractor mod by koros aka ya158](software/Universal Extractor mod by koros aka ya158.js)
-3. [冰点文库下载器](software/冰点文库下载器.js)
+1. [Enigma Virtual Box unpacker](software/Enigma%20Virtual%20Box%20unpacker.js)
+2. [Universal Extractor mod by koros aka ya158](software/Universal%20Extractor%20mod%20by%20koros%20aka%20ya158.js)
+3. [冰点文库下载器](software/%E5%86%B0%E7%82%B9%E6%96%87%E5%BA%93%E4%B8%8B%E8%BD%BD%E5%99%A8.js)
 
 
 ##### Without Installer
@@ -1171,15 +1179,15 @@ module.exports = data
 1. [Cloudevo](software/Cloudevo.js)
 2. [Evernote](software/Evernote.js)
 3. [FreeFileSync](software/FreeFileSync.js)
-4. [Internet Download Manager](software/Internet Download Manager.js)
-5. [NeoSmart/Windows 10 Rollback Utility](software/NeoSmart/Windows 10 Rollback Utility.js)
+4. [Internet Download Manager](software/Internet%20Download%20Manager.js)
+5. [NeoSmart/Windows 10 Rollback Utility](software/NeoSmart/Windows%2010%20Rollback%20Utility.js)
 6. [QQ](software/QQ.js)
 7. [RaiDrive](software/RaiDrive.js)
 8. [SoftEtherVPN](software/SoftEtherVPN.js)
 9. [TIM](software/TIM.js)
 10. [Twitch](software/Twitch.js)
 11. [uTorrent](software/uTorrent.js)
-12. [WeChat Work](software/WeChat Work.js)
+12. [WeChat Work](software/WeChat%20Work.js)
 13. [WeChat](software/WeChat.js)
 14. [XAMPP](software/XAMPP.js)
 
