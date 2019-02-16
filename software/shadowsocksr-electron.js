@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/erguotou520/electron-ssr/releases/latest',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /v(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$=".exe"]'

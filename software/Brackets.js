@@ -4,7 +4,8 @@ let data = {
   url: 'https://github.com/adobe/brackets/releases/latest',
   preferPath: 'Brackets.exe',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /release-(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$=".msi"]'

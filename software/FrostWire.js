@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/frostwire/frostwire/releases',
   version: {
-    selector: '.muted-link:contains("desktop")'
+    selector: '.muted-link:contains("desktop")',
+    match: /frostwire-desktop-(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$="windows.github.exe"]'

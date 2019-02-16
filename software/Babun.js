@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/babun/babun/releases',
   version: {
-    selector: '.commit-title'
+    selector: '.commit-title>a',
+    match: /v(.*)/
   },
   download: {
     plain: 'http://projects.reficio.org/babun/download',

@@ -7,15 +7,24 @@ let data = {
 
   // ?useProxy: true/false,
   // ?withoutHeader: true/false,
+
+  // url or site, either needed
   url: 'https://github.com/telegramdesktop/tdesktop/releases/latest',
+  site: {
+    // key of site, should be found in folder templates
+    // value of site, should be the url
+    Softpedia: 'https://www.softpedia.com/get/PORTABLE-SOFTWARE/Internet/Chat/Portable-Telegram-Desktop.shtml'
+  },
+
   // ?preferPath: 'preferPath',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
     // ?attr:
     // 1. text or omitted => text()
     // 2. html => html()
     // 3. other => attr(other)
     //
+    match: /v(.*)/
     // ?match:
     // 1. omitted => /(\d+[\d.]+\d+)/[1]
     // 2. /other/ => /other/[1]

@@ -3,7 +3,7 @@
 let data = {
   url: 'https://github.com/Microsoft/vscode/releases',
   version: {
-    selector: '.commit-title'
+    selector: '.commit-title>a'
   },
   download: {
     plain: 'https://go.microsoft.com/fwlink/?Linkid=850641',

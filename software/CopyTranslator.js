@@ -1,7 +1,7 @@
 'use strict'
 
 let data = {
-  url: 'https://github.com/elliottzheng/CopyTranslator/releases/latest',
+  url: 'https://github.com/CopyTranslator/CopyTranslator/releases/latest',
   version: {
     selector: '.muted-link.css-truncate',
     match: /v(.*)/

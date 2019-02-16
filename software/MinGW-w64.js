@@ -38,7 +38,7 @@ let data = {
     let path = require('path')
     let parentPath = path.parse(iPath).dir
 
-    while (parentPath.split(/[/\\]+/).includes('bin')) {
+    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 

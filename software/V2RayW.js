@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/Cenmrev/V2RayW/releases',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /v(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$=".zip"]'

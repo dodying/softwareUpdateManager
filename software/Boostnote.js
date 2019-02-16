@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/BoostIO/boost-releases/releases/latest',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /v(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$="full.nupkg"]'

@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/gitextensions/gitextensions/releases',
   version: {
-    selector: '.release-header a'
+    selector: '.release-header a',
+    match: /v(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href*="Portable"][href$=".zip"]'

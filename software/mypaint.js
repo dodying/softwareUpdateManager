@@ -4,7 +4,7 @@ let data = {
   url: 'https://github.com/mypaint/mypaint/releases/latest',
   version: {
     selector: '.muted-link.css-truncate',
-    match: /(.*)/
+    match: /v(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$=".zip"]'

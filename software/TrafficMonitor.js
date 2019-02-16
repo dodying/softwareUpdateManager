@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/zhongyang219/TrafficMonitor/releases/latest',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /V(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href$=".7z"]'

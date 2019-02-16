@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/IceEnd/Yosoro/releases/latest',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /v(.*)/
   },
   download: {
     selector: 'a[href*="/releases/download/"][href*="win32-x64"][href$=".zip"]'

@@ -16,7 +16,7 @@ let data = {
 
       let { dir: parentPath } = path.parse(iPath)
 
-      while (parentPath.split(/[/\\]+/).includes('bin')) {
+      while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
         parentPath = path.parse(parentPath).dir
       }
 

@@ -3,7 +3,7 @@
 let data = {
   url: 'https://github.com/giuspen/cherrytree/releases',
   version: {
-    selector: '.commit-title'
+    selector: '.commit-title>a'
   },
   download: {
     plain: 'http://www.giuspen.com/software/cherrytree_{version}_setup.exe'

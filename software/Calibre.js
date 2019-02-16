@@ -3,7 +3,8 @@
 let data = {
   url: 'https://github.com/kovidgoyal/calibre/releases/latest',
   version: {
-    selector: '.muted-link.css-truncate'
+    selector: '.muted-link.css-truncate',
+    match: /v(.*)/
   },
   download: {
     plain: 'https://calibre-ebook.com/dist/portable',
