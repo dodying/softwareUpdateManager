@@ -45,13 +45,15 @@
 3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion)， 带 :airplane: 的需**番羽土墙**， 带 :hand: 的需**手动安装**
 4. 代理优先级(前提是设置了代理): `config.urlWithoutProxy > config.urlWithProxy > config.useProxy > software.useProxy`
 5. 模式优先级: `config.specialMode > config.mode = config.commercialSoftware`
+6. 安装方法并没有一一测试，如果自动安装失败，请尝试手动安装
 
 
 ### Command-Line
 #### 命令行
 
-* `-makemd`
 * `-help`
+* `-makemd`
+* `-search keyword`
 * `[-profile=name] -list`
 * `[-quiet-mode] [-profile=name] [-filter filter_with_comma ] [ -test | -onlycheck | -backup | -install ]`
 * `[-quiet-mode] [-profile=name] [ -test | -onlycheck | -backup | -install ] [software_name]`
@@ -70,6 +72,10 @@
 
     `node index.js -makemd`
     根据`software`文件夹下的`js`文件创建`README.md`
+* search
+
+    `node index.js -search keyword`
+    搜索并创建`js`文件
 * profile
 
     `node index.js -profile=profile_name`
@@ -113,8 +119,8 @@
 ### TODO
 
 * [x] 支持同一软件的不同版本
-* [ ] 从 [FileHorse.com](http://www.filehorse.com/) 等网站搜索并生成相应js
-* [ ] 自动检查安装包类型并安装
+* [x] 从 [FileHorse.com](http://www.filehorse.com/) 等网站搜索并生成相应js
+* [x] 自动检查安装包类型并安装
 
 ### Software Example
 #### 软件示例
