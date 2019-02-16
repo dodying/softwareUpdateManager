@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.0.587
+// @Version:            1.0.798
 // @Author:             dodying
-// @Date:               2019-2-12 12:59:08
+// @Date:               2019-2-16 14:39:34
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request-promise,socks5-http-client,socks5-https-client
@@ -270,6 +270,17 @@ if (args.length) {
     md = md.replace(/{software-special-installer}/g, softwareSpecialInstaller)
     fse.writeFileSync('README.md', md)
     process.exit()
+  } else if (args.includes('-search')) {
+    let index = args.indexOf('-search')
+    let keyword = args[index + 1]
+    args = keyword
+    if (!keyword) {
+      console.error('Error:\tPlease put in your keyword')
+      process.exit()
+    }
+
+    mode = -3
+    softwareFilter = () => false
   }
 
   if (args.includes('-quiet-mode')) {
@@ -652,17 +663,65 @@ let installLatestVersion = async (i, output, iPath) => {
 }
 
 let init = async () => {
+  if (mode === -3) {
+    let result = []
+    let keyword = args
+
+    let list = [].concat(_.search).filter(i => fse.existsSync(path.join('./js/search', i + '.js')))
+    if (!list.length) list = fse.readdirSync('./js/search')
+
+    for (let i of list) {
+      let tmp = await require('./js/search/' + i + '.js')(req, cheerio, keyword)
+      result = result.concat(tmp)
+    }
+
+    let html = '<html><head><title>Search For ' + keyword + '</title><style>table{border-collapse:collapse}table,th,td{border:1px solid black}</style><script src="https://cdn.bootcss.com/vanilla-lazyload/10.20.0/lazyload.min.js"></script></head><body><table><thead><tr><th></th><th>Name-Version</th><th>Image</th><th>Description</th></tr></thead><tbody>'
+    for (let i = 0; i < result.length; i++) {
+      let item = result[i]
+      html += `<tr><td>${i + 1}</td><td><a href="${item.url}" target="_blank">${item.name}</a> ${item.version}</td><td><img class="lazy" data-src="${item.image}" /></td><td>${item.description}</td></tr>`
+    }
+    html += '</tbody></table><script>new LazyLoad({elements_selector: ".lazy"});</script></body></html>'
+    fse.writeFileSync('./search.html', html)
+    cp.execSync(`start "" "./search.html"`)
+
+    let answer = -1
+    while (answer < 0 || answer > result.length) {
+      answer = readlineSync.questionInt(`[0-${result.length}] (0=Cancel):`)
+    }
+    fse.unlinkSync('./search.html')
+    if (answer !== 0) {
+      let selected = result[answer - 1]
+      if (!fse.existsSync('generate')) fse.mkdirSync('generate')
+      let filepath = path.resolve('./generate/', selected.name + '.js')
+      fse.writeFileSync(filepath, selected.text)
+      console.log(`Location:\t${filepath}\nInfo:\tFile Generated, you should move it to "software" manually`)
+    }
+    process.exit()
+  }
+
   if (!fse.existsSync(_.archivePath)) fse.mkdirsSync(_.archivePath)
   if ([-1, 0].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) process.exit()
 
   for (let i in software) {
     doBeforeExit()
 
+    let iEscaped = i.replace(/[:*?"<>|]/g, '-')
+    let iRaw = i.match(/(.*):(.*)$/) ? i.match(/(.*):(.*)$/)[1] : i
+
+    if (software[i].url && software[i].version) {
+      // go-on
+    } else if (software[i].site && Object.keys(software[i].site).length) {
+      // go-on
+    } else {
+      console.error(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}\nError:\tNo Enough Info`)
+      continue
+    }
+
     if (software[i].commercial === 1) software[i].commercial = _.freePersion
     if (software[i].commercial === 2) software[i].commercial = _.freemium
 
     if ([-2, 1].includes(mode)) {
-      // go to
+      // go-on
     } else if (_.specialMode[i] === -1) {
       continue
     } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode === -1)) {
@@ -670,9 +729,6 @@ let init = async () => {
     } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode === -1)) {
       continue
     }
-
-    let iEscaped = i.replace(/[:*?"<>|]/g, '-')
-    let iRaw = i.match(/(.*):(.*)$/) ? i.match(/(.*):(.*)$/)[1] : i
 
     if (!(i in database)) database[i] = {}
     let iPath = path.resolve(_.rootPath, _.software[i] || '')
@@ -693,6 +749,7 @@ let init = async () => {
     } else {
       version = versionLocal
     }
+
     console.log('\n- - - - - - - - - - -\n')
     console.log(`Software:\t${i}`)
     if ([-2].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}`)
@@ -714,7 +771,29 @@ let init = async () => {
     }
 
     // check version
-    let result = await getLatestVersion(i)
+    let siteList = 'site' in software[i] ? Object.keys(software[i].site) : []
+    let siteNow
+    let result
+    if (!software[i].url && siteList.length) {
+      siteNow = Object.keys(software[i].site)[0]
+      software[i].url = software[i].site[siteNow]
+      console.log(`Site ${siteNow}:\t${software[i].url}`)
+      software[i].version = require('./templates/' + siteNow).version
+      software[i].download = require('./templates/' + siteNow).download
+    }
+    result = await getLatestVersion(i)
+    while (!result && siteList.length) {
+      if (siteList.indexOf(siteNow) + 1 === siteList.length) {
+        break
+      } else {
+        siteNow = siteList[siteList.indexOf(siteNow) + 1]
+        software[i].url = software[i].site[siteNow]
+        console.log(`Site ${siteNow}:\t${software[i].url}`)
+        software[i].version = require('./templates/' + siteNow).version
+        software[i].download = require('./templates/' + siteNow).download
+        result = await getLatestVersion(i)
+      }
+    }
     if (!result) continue
     let { version: versionLatest, res, $ } = result
 

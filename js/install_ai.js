@@ -17,7 +17,7 @@ let install = (from, to, excludes = undefined, filter) => {
   let install = () => {
     let { dir: parentPath } = path.parse(to)
 
-    while (parentPath.split(/[/\\]+/).includes('bin')) {
+    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 

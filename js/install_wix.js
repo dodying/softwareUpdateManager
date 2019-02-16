@@ -24,7 +24,7 @@ let install = (from, to, excludes, installMsi, recurse) => {
   let install = () => {
     let { dir: parentPath, name } = path.parse(to)
 
-    while (parentPath.split(/[/\\]+/).includes('bin')) {
+    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 
@@ -51,6 +51,16 @@ let install = (from, to, excludes, installMsi, recurse) => {
         break
       }
       list = fse.readdirSync(fromNew)
+    }
+
+    if (installMsi.filter(i => i).length === 0) {
+      installMsi = list.filter(i => path.parse(i).ext === '.msi')
+      if (installMsi.length === 0) {
+        console.error('Error:\tCan\'t Find MSI file')
+        return false
+      } else if (installMsi.length === 1 && recurse === undefined) {
+        recurse = true
+      }
     }
 
     for (let file of list) {

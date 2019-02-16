@@ -15,7 +15,7 @@ let kill = (from, to) => {
   let running
   let { dir: parentPath } = path.parse(to)
 
-  while (parentPath.split(/[/\\]+/).includes('bin')) {
+  while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
     parentPath = path.parse(parentPath).dir
   }
 
@@ -29,6 +29,7 @@ let kill = (from, to) => {
     console.log(running)
     let choose = [
       'Not Kill (skip install this software)',
+      'Not Kill (install force, may throw error)',
       'Kill manually (wait until you kill process)',
       'Kill immediately (may with data losed)'
     ]
@@ -36,8 +37,10 @@ let kill = (from, to) => {
     if (choose === 0) {
       return false
     } else if (choose === 1) {
-      readlineSync.keyInPause('Press any key to continue')
+      return true
     } else if (choose === 2) {
+      readlineSync.keyInPause('Press any key to continue')
+    } else if (choose === 3) {
       cp.execSync(`wmic process where "ExecutablePath like '${parentPath.replace(/[/\\]/g, '\\\\')}%'" delete`).toString()
     }
     return require('./kill')(from, to)

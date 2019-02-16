@@ -29,8 +29,13 @@ let install = (from, to, excludes = [], preferPath) => {
       }
     }
     let list = require('./walk')(`unzip\\${name}`)
-    let pathSplit = preferPath.split('/')
-    let rootPath = list.filter(i => path.parse(i).base.toLocaleLowerCase() === pathSplit[0].toLocaleLowerCase())[0]
+    let pathSplit, rootPath
+    if (preferPath) {
+      pathSplit = preferPath.split('/')
+      rootPath = list.filter(i => path.parse(i).base.toLocaleLowerCase() === pathSplit[0].toLocaleLowerCase())[0]
+    } else {
+      rootPath = list[0]
+    }
 
     for (let i = 1; i < pathSplit.length; i++) {
       rootPath = path.parse(rootPath).dir

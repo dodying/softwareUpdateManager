@@ -3,8 +3,10 @@ archive
 html
 unzip
 plugins
+generate
 database.json
 database-*.json
 config.js
 cookies.txt
+cookies.json
 cmd.bat

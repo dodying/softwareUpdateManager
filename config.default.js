@@ -53,6 +53,9 @@ let config = {
   excludeGlobal: [ // 安装中要排除的文件/文件夹
     /^uninstall.exe/i // 相对于软件根路径
   ],
+  search: [ // 留空则搜索全部网站，否则只按以下顺序搜索
+    'softpedia'
+  ],
   software: { // 要启用更新的软件
     '7-Zip': '7-Zip/7z.exe', // 路径(相对于rootPath，可使用绝对路径)
     'Bandisoft Bandizip:portable': 'Bandizip/Bandizip64.exe' // 安装 Bandizip 的 portable 版本
