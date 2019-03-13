@@ -15,13 +15,16 @@ let install = (from, to, excludes = undefined, preserveType = undefined, toDirUs
   const fse = require('fs-extra')
 
   let { dir: parentPath } = path.parse(to)
+  while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
+    parentPath = path.parse(parentPath).dir
+  }
 
-  let installed = require('./../js/install_inno')(from, 'unzip/path/bin.exe', null, toDirUserDefined)
+  let installed = require('./../js/install_inno')(from, to, null, toDirUserDefined)
   if (installed) {
-    let list = require('./walk')('unzip/path')
+    let list = require('./walk')(parentPath)
     list = list.filter(i => path.parse(i).name.match(/,\d+$/))
 
-    if (preserveType === undefined) preserveType = require('os').arch() === 'x64' ? '2' : '1'
+    if (!preserveType) preserveType = require('os').arch() === 'x64' ? '2' : '1'
     for (let i of list) {
       let { dir, name, ext } = path.parse(i)
       let type
@@ -38,19 +41,6 @@ let install = (from, to, excludes = undefined, preserveType = undefined, toDirUs
         fse.unlinkSync(i)
       }
     }
-    let opt = {
-      filter: (src, dest) => {
-        let arr = require('./../config').excludeGlobal
-        if (excludes) arr = arr.concat(excludes)
-        let str = path.relative(parentPath, dest)
-        for (let i = 0; i < arr.length; i++) {
-          if (str.match(arr[i])) return false
-        }
-        return true
-      }
-    }
-
-    fse.copySync('unzip/path', parentPath, opt)
 
     return true
   }
