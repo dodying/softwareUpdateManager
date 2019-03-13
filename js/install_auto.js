@@ -17,7 +17,7 @@ let install = (from, to, excludes = undefined) => {
     let info = cp.execSync(`plugins\\7z.exe l "${from}"`, { encoding: 'utf8' })
     info = info.split(/[\r\n]+/)
 
-    let anchor = info.filter(i => i.match(/-{4}/))
+    let anchor = info.filter(i => i.match(/(-{4,}\s+){4}/))
     let start = info.indexOf(anchor[0])
     let end = info.indexOf(anchor[1], start + 1)
     info = info.splice(start + 1, end - start - 1)
@@ -55,8 +55,6 @@ let install = (from, to, excludes = undefined) => {
         } else {
           return false
         }
-      } else if (files.filter(i => i.name === '!File').length) {
-        return require('./install_msi')(from, to, excludes)
       } else if (files.filter(i => i.name === 'DATA').length) {
         cp.execSync(`plugins\\7z.exe e -y -o"unzip\\" "${from}" "DATA"`)
         let content = fse.readFileSync('./unzip/DATA', 'utf-8')
@@ -76,6 +74,8 @@ let install = (from, to, excludes = undefined) => {
         }
       }
       // binaries
+    } else if (files.filter(i => i.name === '!File').length) {
+      return require('./install_msi')(from, to, excludes)
     } else if (files.filter(i => i.name.match(/app-64\.7z$/i)).length) {
       return require('./install_zipped')(from, to, 'install', 'app-64.7z')
     } else if (files.filter(i => i.name.match(/app-32\.7z$/i)).length) {
