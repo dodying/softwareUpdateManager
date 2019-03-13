@@ -1,16 +1,17 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.0.798
+// @Version:            1.1.356
 // @Author:             dodying
-// @Date:               2019-2-16 14:39:34
+// @Date:               2019-3-13 08:32:24
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
-// @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request-promise,socks5-http-client,socks5-https-client
+// @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
 // ==/Headers==
 
 // 设置
 var _ = require('./config')
+const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins'
 
 // 导入原生模块
 const path = require('path')
@@ -21,7 +22,8 @@ const url = require('url')
 const fse = require('fs-extra')
 const cheerio = require('cheerio')
 const readlineSync = require('readline-sync')
-const request = require('request-promise')
+const request = require('request')
+const requestPromise = require('request-promise')
 const Agent = require('socks5-http-client/lib/Agent')
 const Agent2 = require('socks5-https-client/lib/Agent')
 const notifier = require('node-notifier')
@@ -61,7 +63,7 @@ const _color = {
   error: color.BgRed
 
 }
-let logModify = (colorMsg, args) => {
+function logModify (colorMsg, args) {
   return args.map(i => {
     return typeof i === 'string' ? i.split('\n').map(j => {
       if (j.match(/^(.*):\t(.*)$/)) {
@@ -155,10 +157,28 @@ const versionMax = (v1, v2) => {
 
 // Main
 let args = process.argv.splice(2)
+let argAlias = {
+  '-h': '--help',
+  '-md': '--makemd',
+  '-s': '--search',
+  '-p': '--profile',
+  '-l': '--list',
+  '-q': '--quiet',
+  '-f': '--filter',
+  '-t': '--test',
+  '-oc': '--onlycheck',
+  '-b': '--backup',
+  '-i': '--install'
+}
+for (let i = 0; i < args.length; i++) {
+  if (args[i] in argAlias) args[i] = argAlias[args[i]]
+}
+
 let databaseFile = './database.json'
-if (args.length && args.filter(i => i.match(/^-profile=/)).length) {
-  let arg = args.filter(i => i.match(/^-profile=/))[0]
-  let profile = arg.match(/^-profile=(.*)$/)[1]
+if (args.length && args.includes('--profile')) {
+  let index = args.indexOf('--profile')
+  let profile = args[index + 1]
+  args.splice(index, 2)
   databaseFile = `./database-${profile}.json`
   if (!(profile in _.profile) || Object.keys(_.profile[profile]).length === 0) {
     console.error(`Error:\tNo Profile ${profile}`)
@@ -166,27 +186,50 @@ if (args.length && args.filter(i => i.match(/^-profile=/)).length) {
   }
   _ = _.profile[profile].deepmerge ? merge(_, _.profile[profile]) : Object.assign(_, _.profile[profile])
   delete _.profile
-  args.splice(args.indexOf(arg), 1)
 }
 _.archivePath = path.resolve(__dirname, _.archivePath)
+_.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com')
+
 let database
 try {
   database = fse.existsSync(databaseFile) ? JSON.parse(fse.readFileSync(databaseFile, 'utf-8')) : {}
 } catch (error) {
   database = {}
 }
+
 let mode = -1
 var software = {}
 let softwareFilter
 if (args.length) {
-  if (args.includes('-help')) {
-    console.warn('node index -help')
-    console.warn('node index -makemd')
-    console.warn('node index [-profile=name] -list')
-    console.warn('node index [-quiet-mode] [-profile=name] [-filter filter_with_comma ] [ -test | -onlycheck | -backup | -install ]')
-    console.warn('node index [-quiet-mode] [-profile=name] [ -test | -onlycheck | -backup | -install ] [software_name]')
+  if (args.includes('--help')) {
+    let notice = [
+      'Usage: node index.js [general] [basic | mode filter]',
+      '',
+      'General Option:',
+      ' --profile [name], -p [name]       use specific profile',
+      ' --quiet, -q                       passive mode',
+      '',
+      'Basic Option:',
+      ' --help, -h                        Print help',
+      ' --makemd, -md                     Make README',
+      ' --list, -l                        sort and list softwares',
+      ' --search [keyword], -s [keyword]  search software',
+      '',
+      'Mode Option:',
+      ' --test, -t                        test all softwares',
+      ' --onlycheck, -oc                  only check and write into database',
+      ' --backup, -b                      backup all softwares',
+      ' --install, -i                     install all softwares',
+      '',
+      'Filter Option:',
+      ' --filter [name], -f [name]        filter with RegExp, multi-words separator: ,',
+      ' [name]                            filter when only equal',
+      '',
+      'More Information: https://github.com/dodying/softwareUpdateManager'
+    ]
+    console.warn(notice.join('\n'))
     process.exit()
-  } else if (args.includes('-list')) {
+  } else if (args.includes('--list')) {
     let databaseNew = {}
     let sortable = []
     Object.keys(database).forEach(i => {
@@ -206,73 +249,103 @@ if (args.length) {
     sortable.forEach(i => {
       databaseNew[i[0]] = i[1]
     })
-    console.log(databaseNew)
+    console.log(Object.keys(databaseNew).map(i => `${i}: ${databaseNew[i].version}`).join('\n'))
     fse.writeFileSync(databaseFile, JSON.stringify(databaseNew, null, 2))
     process.exit()
-  } else if (args.includes('-makemd')) {
-    let md = fse.readFileSync('README_RAW.md', 'utf-8')
-    let example = fse.readFileSync('./software/Telegram.js', 'utf-8')
-    let software = ''
+  } else if (args.includes('--makemd')) {
+    (async () => {
+      let database
+      try {
+        database = fse.existsSync('./software.json') ? fse.readJSONSync('./software.json') : {}
+      } catch (error) {
+        database = {}
+      }
 
-    let orderForWithoutDownload = 0
-    let softwareWithoutDownload = ''
+      let md = fse.readFileSync('README_RAW.md', 'utf-8')
+      let example = fse.readFileSync('./software/Telegram.js', 'utf-8')
+      let software = ''
 
-    let orderForWithoutInstaller = 0
-    let softwareWithoutInstaller = ''
+      let orderForWithoutDownload = 0
+      let softwareWithoutDownload = ''
 
-    let orderForSpecialInstaller = 0
-    let softwareSpecialInstaller = ''
+      let orderForWithoutInstaller = 0
+      let softwareWithoutInstaller = ''
 
-    // let list = fse.readdirSync('software')
-    let list = walk('software').map(i => i.split(/[\\/]/).splice(1).join('/'))
-    for (let i = 0; i < list.length; i++) {
-      if (path.parse(list[i]).dir === 'Invalid') continue
-      if (fse.statSync(path.resolve('software', list[i])).isFile()) {
-        let info = require(path.resolve('software', list[i]))
-        let name = list[i].replace(/\.js$/, '')
-        let src = encodeURI(list[i])
+      let orderForSpecialInstaller = 0
+      let softwareSpecialInstaller = ''
 
-        software += `${i + 1}. `
-        software += `[${name}](${info.url})`
-        // if (info.url.match('/github.com/')) {
-        //   let match = info.url.match(/\/github.com\/(.*?)\/(.*?)\//)
-        //   software += `![](https://ghbtns.com/github-btn.html?user=${match[1]}&repo=${match[2]}&type=star&count=true&size=large)`
-        // }
-        if (info.commercial === true || info.commercial === 3) software += ' :money_with_wings:'
-        if (info.commercial === 2) software += ' [Free Personal]'
-        if (info.commercial === 1) software += ' [Freemium]'
-        if (info.useProxy) software += ' :airplane:'
-        if (!info.install) software += ' :hand:'
-        software += '\n'
+      // let list = fse.readdirSync('software')
+      let list = walk('software').map(i => i.split(/[\\/]/).splice(1).join('/'))
+      for (let i = 0; i < list.length; i++) {
+        if (path.parse(list[i]).dir === 'Invalid') continue
+        if (fse.statSync(path.resolve('software', list[i])).isFile()) {
+          let info = require(path.resolve('software', list[i]))
+          let name = list[i].replace(/\.js$/, '')
+          let src = encodeURI(list[i])
+          let uri = info.url || Object.values(info.site)[0]
+          let host = new URL(uri).host
 
-        if (!info.download) {
-          softwareWithoutDownload += `${orderForWithoutDownload + 1}. `
-          softwareWithoutDownload += `[${name}](software/${src})`
-          softwareWithoutDownload += '\n'
-          orderForWithoutDownload++
-        } else if (!info.install) {
-          softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
-          softwareWithoutInstaller += `[${name}](software/${src})`
-          softwareWithoutInstaller += '\n'
-          orderForWithoutInstaller++
-        } else if (info.install && info.install.toString().split(/[\r\n]+/).length > 3) {
-          softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
-          softwareSpecialInstaller += `[${name}](software/${src})`
-          softwareSpecialInstaller += '\n'
-          orderForSpecialInstaller++
+          software += `${i + 1}. `
+          software += `[<img src="https://besticon-demo.herokuapp.com/icon?size=16..32..40&url=${host}" width="16"> ${name}](${uri})`
+
+          if (info.commercial === true || info.commercial === 3) software += ' :money_with_wings:'
+          if (info.commercial === 2) software += ' [Free Personal]'
+          if (info.commercial === 1) software += ' [Freemium]'
+          if (info.useProxy) software += ' :airplane:'
+          if (!info.install) software += ' :hand:'
+
+          if (!(name in database) && ['github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com'].includes(host)) {
+            console.log(name)
+            let res = await req(uri, info.useProxy)
+            if (res instanceof Error || res.statusCode !== 200) res = await req(uri, !info.useProxy)
+            if (res.statusCode === 200) {
+              let $ = cheerio.load(res.body)
+              let description = $('[name="description"]').attr('content') || $('[property="og:description"]').attr('content') || ''
+              if (uri.match('/github.com/(.*?)/releases')) {
+                let repo = res.request.uri.href.match('/github.com/(.*?)/releases')[1]
+                let watch = $('.social-count[aria-label$="watching this repository"]').eq(0).text().trim()
+                let star = $('.social-count[aria-label$="starred this repository"]').eq(0).text().trim()
+                let fork = $('.social-count[aria-label$="forked this repository"]').eq(0).text().trim()
+                description = `[${watch}/${star}/${fork}] ` + description.replace(/\s+Contribute to .*? on GitHub\.$/, '').replace(repo, '').replace(/ - $/, '')
+              }
+              database[name] = description
+            } else {
+              console.log(name, res.statusCode, uri)
+            }
+            fse.writeJSONSync('./software.json', database, { spaces: 2 })
+          }
+          if (name in database) software += ' ' + database[name]
+
+          software += '\n'
+
+          if (!info.download && !info.site) {
+            softwareWithoutDownload += `${orderForWithoutDownload + 1}. `
+            softwareWithoutDownload += `[${name}](software/${src})`
+            softwareWithoutDownload += '\n'
+            orderForWithoutDownload++
+          } else if (!info.install) {
+            softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
+            softwareWithoutInstaller += `[${name}](software/${src})`
+            softwareWithoutInstaller += '\n'
+            orderForWithoutInstaller++
+          } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
+            softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
+            softwareSpecialInstaller += `[${name}](software/${src})`
+            softwareSpecialInstaller += '\n'
+            orderForSpecialInstaller++
+          }
         }
       }
-    }
-    md = md.replace(/{example}/, example)
-    md = md.replace(/{software}/g, software)
-    md = md.replace(/{software-without-download}/g, softwareWithoutDownload)
-    md = md.replace(/{software-without-installer}/g, softwareWithoutInstaller)
-    md = md.replace(/{software-special-installer}/g, softwareSpecialInstaller)
-    fse.writeFileSync('README.md', md)
-    process.exit()
-  } else if (args.includes('-search')) {
-    let index = args.indexOf('-search')
-    let keyword = args[index + 1]
+      md = md.replace(/{example}/, example)
+      md = md.replace(/{software}/g, software)
+      md = md.replace(/{software-without-download}/g, softwareWithoutDownload)
+      md = md.replace(/{software-without-installer}/g, softwareWithoutInstaller)
+      md = md.replace(/{software-special-installer}/g, softwareSpecialInstaller)
+      fse.writeFileSync('README.md', md)
+      process.exit()
+    })()
+  } else if (args.includes('--search')) {
+    let keyword = args[args.indexOf('--search') + 1]
     args = keyword
     if (!keyword) {
       console.error('Error:\tPlease put in your keyword')
@@ -283,8 +356,8 @@ if (args.length) {
     softwareFilter = () => false
   }
 
-  if (args.includes('-quiet-mode')) {
-    args.splice(args.indexOf('-quiet-mode'), 1)
+  if (args.includes('--quiet')) {
+    args.splice(args.indexOf('--quiet'), 1)
     readlineSync.keyInPause = query => console.warn(`${query} ${color.Reset}(Hit any key)`)
     readlineSync.keyInSelect = (list, query) => {
       console.log()
@@ -298,26 +371,26 @@ if (args.length) {
     readlineSync.keyInYNStrict = query => console.warn(`${query} ${color.Reset}[y/n]: n`) || false
   }
 
-  if (args.includes('-filter')) {
+  if (args.includes('--filter')) {
     mode = 0
-    let index = args.indexOf('-filter')
+    let index = args.indexOf('--filter')
     let re = args[index + 1] ? new RegExp((args[index + 1]).replace(/,/g, '|'), 'gi') : ''
-    args.splice(args.indexOf('-filter'), 2)
+    args.splice(index, 2)
     softwareFilter = software => software.match(re)
   }
 
-  if (args.includes('-onlycheck')) {
+  if (args.includes('--onlycheck')) {
     mode = 1
-    args.splice(args.indexOf('-onlycheck'), 1)
-  } else if (args.includes('-backup')) {
+    args.splice(args.indexOf('--onlycheck'), 1)
+  } else if (args.includes('--backup')) {
     mode = 2
-    args.splice(args.indexOf('-backup'), 1)
-  } else if (args.includes('-install')) {
+    args.splice(args.indexOf('--backup'), 1)
+  } else if (args.includes('--install')) {
     mode = 3
-    args.splice(args.indexOf('-install'), 1)
-  } else if (args.includes('-test')) {
+    args.splice(args.indexOf('--install'), 1)
+  } else if (args.includes('--test')) {
     mode = -2
-    args.splice(args.indexOf('-test'), 1)
+    args.splice(args.indexOf('--test'), 1)
   }
 }
 
@@ -356,14 +429,18 @@ softwareList.forEach(i => {
 })
 
 var cookies = request.jar()
+var uriLast
 
-let req = (url, useProxy = false, option = {}) => {
+function reqOption (uri, useProxy = false, option = {}) {
   if (typeof useProxy === 'object') [useProxy, option] = [false, useProxy]
-  let requestOption = Object.assign({
+  if (uriLast) uri = new URL(uri, uriLast).href
+  option = Object.assign({
     method: 'GET',
-    uri: url,
+    uri: uri,
     headers: {
-      'User-Agent': _.userAgent
+      'User-Agent': _.userAgent,
+      'Accept-Language': '*;q=0.5',
+      'Referer': uriLast && new URL(uriLast).hostname === new URL(uri).hostname ? uriLast : uri
     },
     timeout: _.request.timeout * 1000,
     jar: cookies,
@@ -371,25 +448,169 @@ let req = (url, useProxy = false, option = {}) => {
     resolveWithFullResponse: true,
     simple: false
   }, option)
-  if ((_.urlWithProxy.some(urlfilter => url.match(urlfilter)) || _.useProxy === 2 || (_.useProxy === 1 && useProxy)) && !(_.urlWithoutProxy.some(urlfilter => url.match(urlfilter)))) {
-    if (_.request.proxySocks) {
-      requestOption.agentClass = url.match(/^http:/) ? Agent : Agent2
-      requestOption.agentOptions = {
-        socksHost: _.request.proxySocksHost || 'localhost',
-        socksPort: _.request.proxySocksPort
+
+  uri = option.uri || option.url
+  delete option.url
+
+  if (_.urlWithoutProxy.some(urlfilter => uri.match(urlfilter))) {
+  } else if (!_.request.proxy || !_.request.proxy.match(/(http|socks5):\/\/((.*?):(.*?)@)?(.*?):(\d+)/i)) {
+  } else if ((_.urlWithProxy.some(urlfilter => uri.match(urlfilter)) || _.useProxy === 2 || (_.useProxy === 1 && useProxy))) {
+    let [, protocol,, username, password, hostname, port] = _.request.proxy.match(/(http|socks5):\/\/((.*?):(.*?)@)?(.*?):(\d+)/i)
+    if (protocol.toLowerCase() === 'http') {
+      option.proxy = _.request.proxy
+    } else if (protocol.toLowerCase() === 'socks5') {
+      option.agentClass = uri.match(/^http:/) ? Agent : Agent2
+      option.agentOptions = {
+        socksHost: hostname,
+        socksPort: port
       }
-      if (_.request.proxySocksUsername && _.request.proxySocksPassword) {
-        requestOption.agentOptions.socksUsername = _.request.proxySocksUsername
-        requestOption.agentOptions.socksPassword = _.request.proxySocksPassword
+      if (username && password) {
+        option.agentOptions.socksUsername = username
+        option.agentOptions.socksPassword = password
       }
-    } else if (_.request.proxyHTTP) {
-      requestOption.proxy = _.request.proxyHTTP
     }
   }
-  return request(requestOption)
+  return option
 }
 
-let doBeforeExit = () => {
+async function req (uri, useProxy = false, option = {}) {
+  option = reqOption(uri, useProxy, option)
+  uri = option.uri || option.url
+
+  let res
+  try {
+    res = await requestPromise(option)
+    uriLast = res.request.uri.href
+    return res
+  } catch (error) {
+    if (error.cause.errno === 'ETIMEDOUT' && error.cause.port === 443 && uri.match('http://')) {
+      option.uri = uri.replace('http://', 'https://')
+      return req(option)
+    } else {
+      return error
+    }
+  }
+}
+
+function reqRaw (uri, useProxy = false, option = {}) {
+  option = reqOption(uri, useProxy, option)
+  return request(option)
+}
+
+async function downloadFile (uri, i, target) {
+  fse.mkdirsSync(path.dirname(target))
+  software[i].retry = software[i].retry + 1
+  let requestProxy = _.request.proxy
+  _.request.proxy = _.download.proxy
+  let option = {
+    uri: uri
+  }
+
+  if (_.download.timeout) option.timeout = _.download.timeout * 1000
+  if ((_.download.urlWithoutHeader.some(urlfilter => uri.match(urlfilter))) || software[i].withoutHeader) {
+    option.jar = request.jar()
+    option.headers = {}
+  }
+
+  if (fse.existsSync(target)) {
+    if (_.download.continue) {
+      option.headers = {
+        'Range': 'bytes=' + fse.statSync(target).size + '-'
+      }
+    } else {
+      fse.unlinkSync(target)
+    }
+  }
+
+  return new Promise((resolve, reject) => {
+    let req = reqRaw(uri, software[i].useProxy, option)
+    let intervalId, printProgress
+    let interval = 0.8 // 单位:s
+    let errorHandle = async error => {
+      req.abort()
+      clearInterval(intervalId)
+      if (printProgress instanceof Function) printProgress()
+      _.request.proxy = requestProxy
+      console.error(`Try ${software[i].retry}:\t${error.message}`)
+      if (_.download.retry > software[i].retry) {
+        await new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve()
+          }, _.download.retryDelay * 1000)
+        })
+        software[i].useProxy = !software[i].useProxy
+        return downloadFile(uri, i, target)
+      } else {
+        resolve('error')
+      }
+    }
+
+    req.on('response', res => {
+      if (fse.existsSync(target) && !res.headers['content-range']) fse.unlinkSync(target)
+      let dl = fse.existsSync(target) ? fse.statSync(target).size : 0
+      let len = parseInt(res.headers['content-length'], 10) + dl
+      let dlLast = dl
+      let time = new Date().getTime() / 1000
+      let timeLast = time
+      let filename = path.basename(target)
+      let filenameLength = 35
+      let sizeFormat = ['bytes', 'KB', 'MB', 'GB']
+      printProgress = () => {
+        if (_.download.quiet) return
+        let speed = (dl - dlLast) / (time - timeLast || interval)
+        let speedFormat = 0
+        while (speed >= 1024 && speedFormat + 1 < sizeFormat.length) {
+          speed = (speed / 1024).toFixed(2) * 1
+          speedFormat = speedFormat + 1
+        }
+        speed = `${speed} ${sizeFormat[speedFormat]}/s`
+
+        let percent = (100.0 * dl / len).toFixed(0) * 1
+        let dRead = dl
+        let dFormat = 0
+        while (dRead >= 1024 && dFormat + 1 < sizeFormat.length) {
+          dRead = (dRead / 1024).toFixed(2) * 1
+          dFormat = dFormat + 1
+        }
+        dRead = `${dRead} ${sizeFormat[dFormat]}`
+        process.stdout.clearLine()
+        process.stdout.cursorTo(0)
+        process.stdout.write(`${filename.substring(0, filenameLength)}${filename.length > filenameLength ? '...' : ' '.repeat(filenameLength - filename.length + 3)}  ${percent}%[${'='.repeat(percent)}${percent <= 99 ? '>' : ''}${' '.repeat(100 - percent)}] ${dRead} ${speed}\r`)
+      }
+      intervalId = setInterval(printProgress, interval * 1000)
+
+      res.pipe(fse.createWriteStream(target, { flags: 'a' })).on('finish', () => {
+        console.log('')
+        resolve(true)
+      }).on('error', async error => {
+        let result = await errorHandle(error)
+        return result
+      })
+
+      res.on('data', chunk => {
+        timeLast = time
+        time = new Date().getTime() / 1000
+        dlLast = dl
+        dl += chunk.length
+      })
+      res.on('end', async () => {
+        clearInterval(intervalId)
+        if (printProgress instanceof Function) printProgress()
+        _.request.proxy = requestProxy
+        if (res.headers['last-modified']) {
+          let lastModified = res.headers['last-modified']
+          lastModified = new Date(lastModified)
+          fse.utimesSync(target, lastModified, lastModified)
+        }
+      })
+    }).on('error', async error => {
+      let result = await errorHandle(error)
+      return result
+    })
+  })
+}
+
+function doBeforeExit () {
   if (_.debug) {
     let cookiesRaw = fse.existsSync('cookies.json') ? fse.readJSONSync('cookies.json') : {}
     let cookiesNew = JSON.parse(JSON.stringify(cookies))._jar.cookies
@@ -404,16 +625,13 @@ let doBeforeExit = () => {
   fse.emptyDirSync('./unzip')
 }
 
-let getLatestVersion = async (i) => {
+async function getLatestVersion (i) {
   let iEscaped = i.replace(/[:*?"<>|]/g, '-')
 
-  software[i].retry = software[i].retry ? software[i].retry + 1 : 1
-  let res
-  try {
-    res = await req(software[i].url, software[i].useProxy)
-  } catch (error) { // get latest version error
-    console.error(`Try ${software[i].retry}:\t${error.message}`)
-  }
+  software[i].retry = software[i].retry + 1
+  let res = await req(software[i].url, software[i].useProxy)
+  if (res instanceof Error) console.error(`Try ${software[i].retry}:\t${res.message}`)
+
   let returnValue
   if (res && (res.statusMessage === 'OK' || res.statusCode === 200)) {
     returnValue = await (async function () {
@@ -463,14 +681,18 @@ let getLatestVersion = async (i) => {
             return null
           }
         } catch (error) {
+          console.error(error)
           return null
         }
       } else {
         console.error(`Error:\tNo "selector"/"func" in "version"`)
         return null
       }
+      version = version.replace(/[\\/:*?"<>|]/g, '-')
       return { version, res, $ }
     })()
+  } else if (res.statusCode) {
+    console.error(`Try ${software[i].retry}:\t${res.statusCode} ${res.statusMessage}`)
   }
 
   if (returnValue) {
@@ -478,14 +700,22 @@ let getLatestVersion = async (i) => {
   } else if (returnValue === null) {
     return null
   } else if (_.request.retry > software[i].retry) {
-    if (_.request.proxyHTTP || _.request.proxySocks) software[i].useProxy = true
+    software[i].useProxy = !software[i].useProxy
     return getLatestVersion(i)
   } else {
     return null
   }
 }
 
-let downloadLatestVersion = async (i, versionLatest, res, $) => {
+function getExt (uri) {
+  let uri1 = uri.replace('/download', '')
+  let matched = path.extname(uri1)
+  if (['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz'].includes(matched)) {
+    return ['.gz', '.bz2', '.xz'].includes(matched) ? path.extname(path.parse(uri1).name) + matched : matched
+  }
+}
+
+async function downloadLatestVersion (i, versionLatest, res, $) {
   let iEscaped = i.replace(/[:*?"<>|]/g, '-')
   let download
 
@@ -499,14 +729,20 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
     while (result) {
       if (!(result[1] in variables)) {
         console.error(`Error:\tvariables "${result[1]}" is not defined`)
-        process.exit(1)
+        return null
       }
       str = str.replace(result[0], variables[result[1]])
       result = re.exec(str)
     }
     download = str
   } else if ('selector' in software[i].download) { // can get download from html
-    download = $(software[i].download.selector)
+    try {
+      download = $(software[i].download.selector)
+    } catch (error) {
+      console.error(`Error:\tSelector Invalid when get download url\nSelector:\t${software[i].download.selector}`)
+      return false
+    }
+
     if (download.length === 0) {
       console.error(`Error:\tCan't get the element when get download url\nSelector:\t${software[i].download.selector}`)
       return null
@@ -529,6 +765,7 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
         return null
       }
     } catch (error) {
+      console.error(error)
       return null
     }
   } else {
@@ -536,22 +773,82 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
     return null
   }
 
-  download = url.resolve(res.request.href, download)
-  let ext = software[i].download.output
-  if (!ext) {
-    let temp = download.replace(/\/(download|file)$/, '')
-    if (temp.match(/(\.[\d\w]+)$/)) {
-      ext = temp.match(/(\.[\d\w]+)$/)[1]
-      if (ext === '.gz') ext = temp.match(/(\.[\d\w]+.gz)$/)[1]
-    } else if (new URL(download).pathname.match(/(\.[\d\w]+)$/)) {
-      ext = new URL(download).pathname.match(/(\.[\d\w]+)$/)[1]
+  download = url.resolve(res.request.uri.href, download)
+
+  let ext, matched
+  if (software[i].download.output) {
+    ext = software[i].download.output
+  } if ((matched = getExt(download))) {
+    ext = matched
+  } else {
+    software[i].retry = 0
+    let res1 = await new Promise(async (resolve, reject) => {
+      let req, res
+      let getRes = async (uri) => {
+        software[i].retry = software[i].retry + 1
+        if (!(_.download.urlWithoutHeader.some(urlfilter => uri.match(urlfilter))) && !software[i].withoutHeader) {
+          req = reqRaw(uri, software[i].useProxy)
+        } else {
+          req = reqRaw(uri, software[i].useProxy, {
+            headers: {},
+            jar: request.jar(),
+            removeRefererHeader: true
+          })
+        }
+        let html = ''
+        let res = await new Promise((resolve, reject) => {
+          req.on('response', res => {
+            if (res.headers['content-type'].match('application')) {
+              req.abort()
+              resolve(res)
+            } else {
+              res.on('data', chunk => { html += chunk })
+              res.on('end', async () => {
+                let $ = cheerio.load(html)
+                if ($('[http-equiv="refresh"]').length) {
+                  let uri1 = $('[http-equiv="refresh"]').attr('content').match(/url=(.*)/)
+                  let res = await getRes(uri1[1])
+                  resolve(res)
+                } else {
+                  resolve()
+                }
+              })
+            }
+          }).on('error', error => {
+            req.abort()
+            console.error(`Try ${software[i].retry}:\t${error.message}`)
+            software[i].useProxy = !software[i].useProxy
+            resolve()
+          })
+        })
+        if (res) {
+          return res
+        } if (software[i].retry < _.request.retry) {
+          return getRes(download)
+        }
+      }
+      res = await getRes(download)
+      resolve(res)
+    })
+
+    if (!res1) {
+      console.error(`Error:\tCan't Access ${download}`)
+      console.error(`Error:\tCan't get Extension name, please set "output" in "download"`)
+      return null
+    } else if ((matched = getExt(res1.request.uri.pathname))) {
+      ext = matched
+    } else if (res1.headers['content-disposition'] && (matched = res1.headers['content-disposition'].match(/filename="?(.*?)"?(;|$)/)) && matched[1] && (matched = getExt(matched[1]))) {
+      ext = matched
     } else {
       console.error(`Error:\tCan't get Extension name, please set "output" in "download"`)
       return null
     }
   }
+
+  if (!ext) return null
+
   if (url.parse(download).host === 'sourceforge.net' && download.match(/\/download$/) && _.download.sfMirror) download = download + '?use_mirror=' + _.download.sfMirror
-  let output = iEscaped + '-' + versionLatest + (ext)
+  let output = iEscaped + '-' + versionLatest + ext.toLowerCase()
   output = path.resolve(_.archivePath, output)
   console.log(`Download:\t${download}`)
   console.log(`Output:\t${output}`)
@@ -563,22 +860,24 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
   let args = []
   let end
 
-  _.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com')
-
-  if (_.download.method === 'aria2c') {
+  if (_.download.method === 'request') {
+    software[i].retry = 0
+    end = await downloadFile(download, i, output)
+  } else if (_.download.method === 'aria2c') {
     if (_.download.continue) args.push('--continue')
     if (_.download.quiet) args.push('--quiet')
-    if (_.download.retry) args.push('--max-tries=' + _.download.retry, '--retry-wait=5')
+    if (_.download.retry) args.push('--max-tries=' + _.download.retry, '--retry-wait=' + _.download.retryDelay)
     if (_.download.timeout) args.push('--timeout=' + _.download.timeout)
     if (!(_.download.urlWithoutHeader.some(urlfilter => download.match(urlfilter))) && !software[i].withoutHeader) {
-      args.push('--user-agent=' + _.userAgent)
-      args.push('--referer=' + software[i].url)
+      args.push('--load-cookies=cookies.txt') // Load Cookies from FILE
+      args.push(`--user-agent="${_.userAgent}"`)
+      args.push(`--referer="${software[i].url}"`)
+      // args.push('--header="Accept-Language: *;q=0.5"')
     }
     if (_.download.proxy && (_.urlWithProxy.some(urlfilter => download.match(urlfilter)) || _.useProxy === 2 || (_.useProxy === 1 && software[i].useProxy)) && !(_.urlWithoutProxy.some(urlfilter => download.match(urlfilter)))) {
       args.push(`--all-proxy=${_.download.proxy}`)
     }
     args.push('--remote-time') // Retrieve timestamp of the remote file from the remote HTTP/FTP server and if it is available, apply it to the local file.
-    args.push('--load-cookies=cookies.txt') // Load Cookies from FILE
     args.push('--auto-file-renaming=false') // Rename file name if the same file already exists.
     args.push('--allow-overwrite=true') // Restart download from scratch if the corresponding control file doesn’t exist.
     args.push('--check-certificate=false') // Verify the peer using certificates
@@ -586,16 +885,19 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
     args.push('--min-split-size=1M') // aria2 does not split less than 2*SIZE byte range.
     args.push('--max-connection-per-server=16') // The maximum number of connections to one server for each download.
     args.push('--split=16') // Download a file using N connections.
-    args.push('--out=' + path.relative('', output), download)
+    args.push('--console-log-level=error') // Set log level to output to console.
+    args.push(`--out=${path.relative('', output)}`, download)
     end = await spawnSync(`plugins\\aria2c.exe`, args)
   } else if (_.download.method === 'wget') {
     if (_.download.continue) args.push('--continue')
     if (_.download.quiet) args.push('--quiet')
-    if (_.download.retry) args.push('--tries=' + _.download.retry, '--waitretry=5')
+    if (_.download.retry) args.push('--tries=' + _.download.retry, '--waitretry=' + _.download.retryDelay)
     if (_.download.timeout) args.push('--timeout=' + _.download.timeout)
     if (!(_.download.urlWithoutHeader.some(urlfilter => download.match(urlfilter))) && !software[i].withoutHeader) {
-      args.push('--user-agent=' + _.userAgent)
-      args.push(`--referer=${software[i].url}`)
+      args.push('--load-cookies=cookies.txt') // load cookies from FILE before session
+      args.push(`--user-agent="${_.userAgent}"`)
+      args.push(`--referer="${software[i].url}"`)
+      // args.push('--header="Accept-Language: *;q=0.5"')
     }
     if (_.download.proxy && (_.urlWithProxy.some(urlfilter => download.match(urlfilter)) || _.useProxy === 2 || (_.useProxy === 1 && software[i].useProxy)) && !(_.urlWithoutProxy.some(urlfilter => download.match(urlfilter)))) {
       args.push('-e', 'use_proxy=yes')
@@ -603,29 +905,32 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
       args.push('-e', `https_proxy=${_.download.proxy}`)
       args.push()
     }
-    args.push('--load-cookies=cookies.txt') // load cookies from FILE before session
     args.push('--no-check-certificate') // don't validate the server's certificate
-    args.push('--output-document=' + output, download)
+    args.push('--no-verbose') // turn off verboseness, without being quiet
+    args.push('--show-progress') // display the progress bar in any verbosity mode
+    args.push(`--output-document=${output}`, download)
     end = await spawnSync(`plugins\\wget.exe`, args)
   } else if (_.download.method === 'curl') {
     if (_.download.continue) args.push('-C')
     if (_.download.quiet) args.push('--silent')
-    if (_.download.retry) args.push('--retry', _.download.retry, '--retry-delay', '5')
+    if (_.download.retry) args.push('--retry', _.download.retry, '--retry-delay', _.download.retryDelay)
     if (_.download.timeout) args.push('--max-time', _.download.timeout)
     if (!(_.download.urlWithoutHeader.some(urlfilter => download.match(urlfilter))) && !software[i].withoutHeader) {
+      args.push('--cookie', 'cookies.txt') // Send cookies from string/file
       args.push('--user-agent', _.userAgent)
       args.push('--referer', software[i].url)
+      // args.push('--header', 'Accept-Language: *;q=0.5')
     }
     if (_.download.proxy && (_.urlWithProxy.some(urlfilter => download.match(urlfilter)) || _.useProxy === 2 || (_.useProxy === 1 && software[i].useProxy)) && !(_.urlWithoutProxy.some(urlfilter => download.match(urlfilter)))) {
       args.push('--proxy', _.download.proxy)
     }
     args.push('--remote-time') // Set the remote file's time on the local output
-    args.push('--cookie', 'cookies.txt') // Send cookies from string/file
     args.push('--location') // Follow redirects
     args.push('--insecure') // Allow insecure server connections when using SSL
     args.push('-', '--output', output, download)
     end = await spawnSync(`plugins\\curl.exe`, args)
   }
+  console.log()
 
   if (end === 'error') {
     console.error(`Software:\t${i}\nError: Download new version Error`)
@@ -638,7 +943,65 @@ let downloadLatestVersion = async (i, versionLatest, res, $) => {
   }
 }
 
-let installLatestVersion = async (i, output, iPath) => {
+async function virusCheckFile (file) {
+  let sha256 = getHash(file, 'sha256')
+
+  let res = await req('https://www.virustotal.com/vtapi/v2/file/report', {
+    method: 'POST',
+    form: {
+      apikey: _.virus.apiKey,
+      resource: sha256
+    },
+    json: true
+  })
+  if (!res.statusCode || !res.body) return virusCheckFile(file)
+  if (res.body.response_code === -2) return 'Scaning'
+  if (res.body.response_code === 0 && _.virus.upload) {
+    console.log('Note:\tYour file is uploading to scan')
+    res = await req('https://www.virustotal.com/vtapi/v2/file/scan', {
+      method: 'POST',
+      formData: {
+        apikey: _.virus.apiKey,
+        file: {
+          value: fse.createReadStream(file),
+          options: {
+            filename: path.basename(file),
+            contentType: 'application/octet-stream'
+          }
+        }
+      },
+      json: true
+    })
+    return virusCheckFile(file)
+  }
+  if (res.body.response_code === 0 && !_.virus.upload) return 'No Data'
+
+  let result = Object.keys(res.body.scans).map(i => {
+    return Object.assign({ name: i }, res.body.scans[i])
+  })
+  console.warn(result.filter(i => i.detected).map(i => `Warn:\t${i.name}: ${i.result}`).join('\n'))
+  result = result.filter(i => {
+    let ignoreSoftware = _.virus.ignoreSoftware.some(keyword => {
+      if (typeof keyword === 'string') {
+        return i.name === keyword
+      } else if (keyword instanceof RegExp) {
+        return i.name.match(keyword)
+      }
+    })
+    let ignoreResult = _.virus.ignoreSoftware.some(keyword => {
+      if (typeof keyword === 'string') {
+        return i.result === keyword
+      } else if (keyword instanceof RegExp) {
+        return i.result.match(keyword)
+      }
+    })
+    return !ignoreSoftware && !ignoreResult
+  })
+  let ratio = result.filter(i => i.detected).length / result.length
+  return ratio <= _.virus.safeDetectionRatio
+}
+
+async function installLatestVersion (i, output, iPath) {
   if (!_.ignoreWarn.preferPath && software[i].preferPath && iPath.toLowerCase().substr(-software[i].preferPath.length).replace(/\\/g, '/') !== software[i].preferPath.toLowerCase()) {
     console.warn(`Warn:\tThe path you given don't have preferred\nTarget:\t${iPath}\nPreferPath:\t${software[i].preferPath}`)
     if (!readlineSync.keyInYNStrict('Continue to install?')) return false
@@ -662,8 +1025,33 @@ let installLatestVersion = async (i, output, iPath) => {
   return installed
 }
 
-let init = async () => {
-  if (mode === -3) {
+function getHash (file, algorithm) {
+  // Hash algorithms: MD2 MD4 MD5 SHA1 SHA256 SHA384 SHA512
+  return cp.spawnSync('certutil', ['-hashfile', file, algorithm]).output[1].toString().split(/[\r\n]+/)[1]
+}
+
+async function init () {
+  if (['--makemd'].some(i => args.includes(i))) return
+
+  if (!fse.existsSync('./plugins')) {
+    console.log('Error:\tNo Plugins, Please Download And Extract to "plugins"')
+    if (readlineSync.keyInYNStrict(`Open ${releasePage}`)) cp.execSync(`start "" "${releasePage}"`)
+  } else {
+    let list = fse.readdirSync('./plugins')
+    let notExists = [
+      '7z.dll', '7z.exe',
+      'dark.exe', 'winterop.dll', 'wix.dll',
+      'innounp.exe'
+    ].filter(i => !list.includes(i))
+    // let downloadTool = ['aria2c.exe', 'wget.exe', 'curl.exe'].filter(i => list.includes(i))
+    if (notExists.length) { //  || !downloadTool
+      console.log('Error:\t"plugins" exists, but some file needed not')
+      if (readlineSync.keyInYNStrict(`Open ${releasePage}`)) cp.execSync(`start "" "${releasePage}"`)
+      return
+    }
+  }
+
+  if (mode === -3) { // Search
     let result = []
     let keyword = args
 
@@ -671,6 +1059,7 @@ let init = async () => {
     if (!list.length) list = fse.readdirSync('./js/search')
 
     for (let i of list) {
+      console.log(`Searching:\t${i}`)
       let tmp = await require('./js/search/' + i + '.js')(req, cheerio, keyword)
       result = result.concat(tmp)
     }
@@ -696,11 +1085,11 @@ let init = async () => {
       fse.writeFileSync(filepath, selected.text)
       console.log(`Location:\t${filepath}\nInfo:\tFile Generated, you should move it to "software" manually`)
     }
-    process.exit()
+    return
   }
 
   if (!fse.existsSync(_.archivePath)) fse.mkdirsSync(_.archivePath)
-  if ([-1, 0].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) process.exit()
+  if ([-1, 0].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) return
 
   for (let i in software) {
     doBeforeExit()
@@ -745,7 +1134,12 @@ let init = async () => {
     if ([-2, 1, 2].includes(mode) || !fse.existsSync(iPath)) {
       version = null
     } else if ('version' in database[i]) {
-      version = versionMax(database[i].version, versionLocal) ? database[i].version : versionLocal
+      if (software[i].noMd5 || database[i].md5 === getHash(iPath, 'md5')) {
+        version = database[i].version
+      } else {
+        version = versionLocal
+      }
+      // version = versionMax(database[i].version, versionLocal) ? database[i].version : versionLocal
     } else {
       version = versionLocal
     }
@@ -755,7 +1149,7 @@ let init = async () => {
     if ([-2].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}`)
     console.log(`Location:\t${iPath}`)
     console.log(`Version:\t${version}`)
-    console.log(`Url:\t${software[i].url}`)
+    if (software[i].url) console.log(`Url:\t${software[i].url}`)
 
     if ([3].includes(mode) && 'install' in software[i]) {
       if (fse.existsSync(iPath) && !versionMax(database[i].version, versionLocal)) continue
@@ -771,6 +1165,7 @@ let init = async () => {
     }
 
     // check version
+    software[i].retry = 0
     let siteList = 'site' in software[i] ? Object.keys(software[i].site) : []
     let siteNow
     let result
@@ -801,12 +1196,16 @@ let init = async () => {
     console.log(`Latest Version:\t${versionLatest}`)
 
     if ([1].includes(mode)) {
+      database[i].md5 = getHash(iPath, 'md5')
       database[i].version = versionLatest
       continue
     } else if (version === null || versionMax(versionLatest, version)) { // new version
       // go-on
     } else { // no new version
-      if (_.saveVersion) database[i].version = versionLatest
+      if (_.saveVersion) {
+        database[i].md5 = getHash(iPath, 'md5')
+        database[i].version = versionLatest
+      }
       continue
     }
 
@@ -822,8 +1221,8 @@ let init = async () => {
     if ([-1, 0].includes(mode) && !_.preserveOldArchive) {
       let name = iEscaped
       let files = fse.readdirSync(_.archivePath).filter(i => {
-        let fileName = i.match(/.gz/) ? path.parse(path.parse(i).name).name : path.parse(i).name
-        return i.includes(name + '-') && fileName !== name + '-' + versionLatest
+        let fileName = ['.gz', '.bz2', '.xz'].includes(path.extname(i)) ? path.parse(path.parse(i).name).name : path.parse(i).name
+        return i.indexOf(name) === 0 && i.includes(name + '-') && fileName !== name + '-' + versionLatest
       })
       if (files.length === 1 && path.parse(files[0]).name === name + '-' + database[i].version) {
         let file = path.resolve(_.archivePath, files[0])
@@ -868,20 +1267,37 @@ let init = async () => {
       // go-on
     } else {
       console.warn(`Warn:\tYou should install it yourself.\nTarget:\t${iPath}\nOutput:\t${output}`)
-      if (readlineSync.keyInYNStrict(`Show:\t${output}`)) cp.execSync(`start "" "explorer" /select,"${output}"`)
+      if (!_.ignoreWarn.mode1 && readlineSync.keyInYNStrict(`Show:\t${output}`)) cp.execSync(`start "" "explorer" /select,"${output}"`)
+      continue
+    }
+
+    // virus check
+    let safe
+    if (_.virus.apiKey) {
+      safe = await virusCheckFile(output)
+    } else if (_.ignoreWarn.withoutVirusScan || readlineSync.keyInYNStrict(`File:\t${output}\nWarn:\tFile is not scaned to check virus\nContinue to install anymore?`)) {
+      safe = true
+    }
+    if (!safe || typeof safe === 'string') {
+      console.error(`Software:\t${i}\nError:\tSkipped\nReason:\t${'Not Safe' || safe}\nLocation:\t${output}\nTarget:\t${iPath}`)
       continue
     }
 
     // install
     let installed = await installLatestVersion(i, output, iPath)
     if (installed) database[i].lastupdatetime = getNow()
-    if (installed && _.saveVersion) database[i].version = versionLatest
+    if (installed && _.saveVersion) {
+      database[i].md5 = getHash(iPath, 'md5')
+      database[i].version = versionLatest
+    }
   }
+
+  return true
 }
 
-init().then(() => {
+init().then(result => {
   doBeforeExit()
-  console.log('\n- - - - - - - - - - -\n')
+  if (result) console.log('\n- - - - - - - - - - -\n')
 }, (err) => {
   doBeforeExit()
 
