@@ -14,13 +14,13 @@ let kill = (from, to) => {
 
   let running
   let { dir: parentPath } = path.parse(to)
-
   while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
     parentPath = path.parse(parentPath).dir
   }
+  if (!require('fs').existsSync(parentPath)) return true
 
   try {
-    running = cp.execSync(`wmic process where "ExecutablePath like '${parentPath.replace(/[/\\]/g, '\\\\')}%'" get ExecutablePath, Caption`).toString()
+    running = cp.spawnSync('wmic', ['process', 'where', 'ExecutablePath like \'' + parentPath.replace(/[/\\]/g, '\\\\') + '%\'', 'get', 'ExecutablePath,', 'Caption']).output[1].toString()
     if (running.match(/^\s+$/)) running = false
   } catch (error) {
     running = false
@@ -41,7 +41,7 @@ let kill = (from, to) => {
     } else if (choose === 2) {
       readlineSync.keyInPause('Press any key to continue')
     } else if (choose === 3) {
-      cp.execSync(`wmic process where "ExecutablePath like '${parentPath.replace(/[/\\]/g, '\\\\')}%'" delete`).toString()
+      cp.execSync(`wmic process where "ExecutablePath like '${parentPath.replace(/[/\\]/g, '\\\\')}%'" Call Terminate`).toString()
     }
     return require('./kill')(from, to)
   }

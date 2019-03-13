@@ -11,9 +11,11 @@ let kill = (from, to) => {
   const cp = require('child_process')
   const readlineSync = require('readline-sync')
 
+  if (!require('fs').existsSync(to)) return true
+
   let running
   try {
-    running = cp.execSync(`wmic process where ExecutablePath="'${from.replace(/[/\\]/g, '\\\\')}" get ExecutablePath, Caption`).toString()
+    running = cp.spawnSync('wmic', ['process', 'where', 'ExecutablePath="' + to.replace(/[/\\]/g, '\\\\') + '"', 'get', 'ExecutablePath,', 'Caption']).output[1].toString()
     if (running.match(/^\s+$/)) running = false
   } catch (error) {
     running = false
@@ -31,7 +33,7 @@ let kill = (from, to) => {
     } else if (choose === 1) {
       readlineSync.keyInPause('Press any key to continue')
     } else if (choose === 2) {
-      cp.execSync(`wmic process where ExecutablePath="'${from.replace(/[/\\]/g, '\\\\')}" delete`).toString()
+      cp.execSync(`wmic process where ExecutablePath="'${to.replace(/[/\\]/g, '\\\\')}" Call Terminate`).toString()
     }
     return require('./kill_single')(from, to)
   }
