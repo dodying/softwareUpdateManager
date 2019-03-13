@@ -6,16 +6,13 @@
  * @param {string} from A path to the install pack file.
  * @param {string} to A path to the bin file.
  * @param {(string | array)} excludes what files you don't want to install
- * @param {(string | array | RegExp)} installMsi what msi you want to install (without .msi)
- * @param {boolean} recurse when $installMsi=1 and this ignored, this will be true
+ * @param {(string | RegExp)} installMsi what msi you want to install (without .msi) // String: 完全相等, RegExp: 匹配即可
+ * @param {string} preferPath
  */
 
-let install = (from, to, excludes, installMsi, recurse) => {
+let install = async (from, to, excludes, installMsi, preferPath) => {
   excludes = excludes ? [].concat(excludes) : []
   excludes.push('.msi$')
-
-  installMsi = [].concat(installMsi).map(i => typeof i === 'string' ? i + '.msi' : i)
-  if (installMsi.length === 1 && recurse === undefined) recurse = true
 
   const path = require('path')
   const fse = require('fs-extra')
@@ -23,24 +20,11 @@ let install = (from, to, excludes, installMsi, recurse) => {
 
   let install = () => {
     let { dir: parentPath, name } = path.parse(to)
-
     while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 
     cp.execSync(`plugins\\dark.exe "${from}" -x ".\\unzip\\${name}"`)
-
-    let opt = {
-      filter: (src, dest) => {
-        let arr = require('./../config').excludeGlobal
-        if (excludes) arr = arr.concat(excludes)
-        let str = path.relative(parentPath, dest)
-        for (let i = 0; i < arr.length; i++) {
-          if (str.match(arr[i])) return false
-        }
-        return true
-      }
-    }
 
     let fromNew = `unzip\\${name}\\AttachedContainer`
     let list = fse.readdirSync(fromNew)
@@ -53,59 +37,15 @@ let install = (from, to, excludes, installMsi, recurse) => {
       list = fse.readdirSync(fromNew)
     }
 
-    if (installMsi.filter(i => i).length === 0) {
-      installMsi = list.filter(i => path.parse(i).ext === '.msi')
-      if (installMsi.length === 0) {
-        console.error('Error:\tCan\'t Find MSI file')
-        return false
-      } else if (installMsi.length === 1 && recurse === undefined) {
-        recurse = true
-      }
-    }
-
     for (let file of list) {
-      let { name, ext } = path.parse(file)
       let _path = path.resolve('./', fromNew, file)
-
-      let match = installMsi.some(i => {
-        return typeof i === 'string' ? i === file : !!file.match(i)
-      })
-
-      if (!match) {
-        fse.removeSync(_path)
+      if ((typeof installMsi === 'string' && file === installMsi) || (installMsi instanceof RegExp && file.match(installMsi))) {
+        return require('./install_msi')(_path, to, excludes, preferPath)
+      } else {
         continue
       }
-
-      if (ext === '.msi') {
-        console.log(`Installing:\tExtract from ${file}`)
-        let folderNew = `${path.parse(__dirname).dir}\\${fromNew}\\${name}_msi`
-        cp.execSync(`start /wait msiexec /a "${_path}" /quiet /qn TARGETDIR="${folderNew}"`)
-        fse.removeSync(_path)
-
-        if (recurse) {
-          while (true) {
-            let files = fse.readdirSync(folderNew)
-            files = files.filter(i => path.parse(i).ext !== '.msi')
-            if (files.length === 1 && fse.statSync(path.resolve(folderNew, files[0])).isDirectory()) {
-              folderNew = path.resolve(folderNew, files[0])
-            } else {
-              break
-            }
-          }
-        }
-
-        if (installMsi.length === 1 && recurse) {
-          fse.copySync(folderNew, parentPath, opt)
-          return true
-        } else {
-          fse.copySync(folderNew, `${path.parse(__dirname).dir}\\${fromNew}`, opt)
-          fse.removeSync(`${path.parse(__dirname).dir}\\${fromNew}\\${name}_msi`)
-        }
-      }
     }
-
-    fse.copySync(fromNew, parentPath, opt)
-    return true
+    return false
   }
 
   let killed = require('./kill')(from, to)
@@ -115,6 +55,7 @@ let install = (from, to, excludes, installMsi, recurse) => {
     let installed = install()
     return installed
   } catch (error) {
+    console.error(error)
     return false
   }
 }
