@@ -28,6 +28,7 @@ let install = (from, to, js, filter = undefined, ...args) => {
 
   list = list.filter(i => fse.statSync(path.resolve('./unzip', i)).isFile())
   let fromNew = filter ? list.filter(i => i.match(filter))[0] : list[0]
+  if (!fromNew) return false
   fromNew = path.resolve('./unzip', fromNew)
 
   let installed
