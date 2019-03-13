@@ -6,6 +6,7 @@
  * @param {string} from A path to the install pack file.
  * @param {string} to A path to the bin file.
  * @param {(string | array)} excludes what files you don't want to install
+ * @param {string} preferPath
  */
 
 let install = (from, to, excludes = [], preferPath) => {
@@ -16,25 +17,17 @@ let install = (from, to, excludes = [], preferPath) => {
 
   let install = () => {
     let { dir: parentPath, name } = path.parse(to)
-    require('child_process').execSync(`start /wait msiexec /a "${from}" /quiet /qn TARGETDIR="${path.parse(__dirname).dir}\\unzip\\${name}\\"`)
-    let opt = {
-      filter: (src, dest) => {
-        let arr = require('./../config').excludeGlobal
-        if (excludes) arr = arr.concat(excludes)
-        let str = path.relative(parentPath, dest)
-        for (let i = 0; i < arr.length; i++) {
-          if (str.match(arr[i])) return false
-        }
-        return true
-      }
-    }
+
+    require('child_process').execSync(`start /wait msiexec /a "${from}" /passive /qr /norestart TARGETDIR="${path.parse(__dirname).dir}\\unzip\\${name}\\"`)
+
     let list = require('./walk')(`unzip\\${name}`)
     let pathSplit, rootPath
     if (preferPath) {
       pathSplit = preferPath.split('/')
       rootPath = list.filter(i => path.parse(i).base.toLocaleLowerCase() === pathSplit[0].toLocaleLowerCase())[0]
     } else {
-      rootPath = list[0]
+      rootPath = list.find(i => fse.statSync(i).isFile() && path.dirname(path.relative(`unzip\\${name}`, i)) === '.')
+      pathSplit = path.relative(`unzip\\${name}`, rootPath).split('/')
     }
 
     for (let i = 1; i < pathSplit.length; i++) {
@@ -44,7 +37,7 @@ let install = (from, to, excludes = [], preferPath) => {
 
     if (fse.statSync(rootPath).isFile()) rootPath = path.parse(rootPath).dir
 
-    fse.copySync(rootPath, parentPath, opt)
+    require('./copy')(rootPath, parentPath, excludes)
     return true
   }
 
@@ -55,6 +48,7 @@ let install = (from, to, excludes = [], preferPath) => {
     let installed = install()
     return installed
   } catch (error) {
+    console.error(error)
     return false
   }
 }
