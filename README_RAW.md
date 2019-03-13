@@ -34,9 +34,10 @@
 
 ##### 使用方法
 
-1. git clone
-2. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
-3. 复制一份`config.default.js`，按其中注释修改并存为`config.js`
+1. `git clone https://github.com/dodying/softwareUpdateManager`
+2. `git clone https://github.com/dodying/software-for-softwareUpdateManager`，并移动 **software** 到 **softwareUpdateManager** 下
+3. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
+4. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
 
 ##### 其他说明
 
@@ -51,66 +52,66 @@
 ### Command-Line
 #### 命令行
 
-* `-help`
-* `-makemd`
-* `-search keyword`
-* `[-profile=name] -list`
-* `[-quiet-mode] [-profile=name] [-filter filter_with_comma ] [ -test | -onlycheck | -backup | -install ]`
-* `[-quiet-mode] [-profile=name] [ -test | -onlycheck | -backup | -install ] [software_name]`
+* `--help`
+* `--makemd`
+* `--search keyword`
+* `[--profile name] --list`
+* `[--quiet] [--profile name] [--filter name] [ --test | --onlycheck | --backup | --install ]`
+* `[--quiet] [--profile name] [ --test | --onlycheck | --backup | --install ] [name]`
 
 <details>
   <summary>Command-Line Details</summary>
 
-* node index
+* `node index`
 
    `node index.js`
     检查并更新所有软件
-* help
+* `--help`, `-h`
 
-    `node index.js -help`
-* makemd
+    `node index.js --help`
+* `--makemd`, `-md`
 
-    `node index.js -makemd`
+    `node index.js --makemd`
     根据`software`文件夹下的`js`文件创建`README.md`
-* search
+* `--search`, `-s`
 
-    `node index.js -search keyword`
+    `node index.js --search keyword`
     搜索并创建`js`文件
-* profile
+* `--profile`, `-p`
 
-    `node index.js -profile=profile_name`
-    eg: `node index.js -profile=sync`
+    `node index.js --profile name`
+    eg: `node index.js -profile sync`
         ==> 当`config`与`config.profile.sync`中存在相同项时，以`config.profile.sync`优先，同时数据会保存在`data-sync.json`中
-* list
+* `--list`, `-l`
 
-    `node index.js -list`
+    `node index.js --list`
     列出`database.json`中的软件及版本
-* quiet-mode
+* `--quiet`, `-q`
 
-    `node index.js -quiet-mode`
+    `node index.js --quiet`
     所有的提问为false或0(第一项)
-* filter
+* `--filter`, `-f`
 
-    `node index.js -filter filter_with_comma`
+    `node index.js --filter name`
     检查并更新匹配的软件(多个匹配条件用`,`相隔) (忽略更新间隔)
-* test
+* `--test`, `-t`
 
-    `node index.js -test`
+    `node index.js --test`
     获取网上所有软件的最新版本号 (忽略更新间隔)
-* onlycheck
+* `--onlycheck`, `-oc`
 
-    `node index.js -onlycheck`
+    `node index.js --onlycheck`
     获取网上软件的最新版本号，并写入`database.json` (忽略更新间隔)
     效果: 忽略本地版本
-* backup
+* `--backup`, `-b`
 
-    `node index.js -backup`
+    `node index.js --backup`
     获取网上软件的最新版本，并下载安装包 (忽略更新间隔)
-* install
+* `--install`, `-i`
 
-    `node index.js -install`
+    `node index.js --install`
     安装本地最新版本
-* software_name
+* `software_name`
 
     `node index.js 7-Zip AIMP "Google Chrome"`
     检查并更新这些软件(多个软件用`空格`相隔) (忽略更新间隔)
@@ -169,5 +170,3 @@
   可以使用参数 `/extract <path>` 来提取，查看[更多信息](https://www.advancedinstaller.com/user-guide/exe-setup-file.html)
 
     `RaiDrive`
-
-2. `Evernote` 是使用MSI打包的, 你可以从 `%temp%\Evernote.msi` 获得安装包
