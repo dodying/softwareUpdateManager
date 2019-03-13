@@ -9,5 +9,6 @@ generate
 html
 node_modules
 plugins
+software
 software.json
 unzip
