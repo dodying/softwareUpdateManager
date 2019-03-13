@@ -16,23 +16,12 @@ let install = (from, to, excludes = undefined, filter) => {
 
   let install = () => {
     let { dir: parentPath } = path.parse(to)
-
     while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 
-    cp.execSync(`"${from}" /extract "${path.parse(__dirname).dir}\\unzip\\"`)
-    let opt = {
-      filter: (src, dest) => {
-        let arr = require('./../config').excludeGlobal
-        if (excludes) arr = arr.concat(excludes)
-        let str = path.relative(parentPath, dest)
-        for (let i = 0; i < arr.length; i++) {
-          if (str.match(arr[i])) return false
-        }
-        return true
-      }
-    }
+    cp.execSync(`"${from}" /extract:"${path.parse(__dirname).dir}\\unzip\\"`)
+
     let fromNew = fse.readdirSync('unzip')
     fromNew = path.join('unzip', fromNew[0])
     if (filter) {
@@ -44,7 +33,9 @@ let install = (from, to, excludes = undefined, filter) => {
         console.error(`Error:\tCan get match path in "install_ai.js"`)
       }
     }
-    fse.copySync(fromNew, parentPath, opt)
+
+    require('./copy')(fromNew, parentPath, excludes)
+    return true
   }
 
   let killed = require('./kill')(from, to)
@@ -54,6 +45,7 @@ let install = (from, to, excludes = undefined, filter) => {
     let installed = install()
     return installed
   } catch (error) {
+    console.error(error)
     return false
   }
 }

@@ -24,7 +24,6 @@ let install = (from, to, excludes = undefined, toDirUserDefined = {}) => {
 
   let install = () => {
     let { dir: parentPath, name } = path.parse(to)
-
     while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
@@ -32,17 +31,6 @@ let install = (from, to, excludes = undefined, toDirUserDefined = {}) => {
     // http://innounp.sourceforge.net/#Usage
     cp.execSync(`plugins\\innounp.exe -x -d"unzip\\${name}\\" -b -a -y "${from}"`)
     let list = fse.readdirSync(`unzip\\${name}`).filter(i => fse.statSync(`unzip\\${name}\\` + i).isDirectory())
-    let opt = {
-      filter: (src, dest) => {
-        let arr = require('./../config').excludeGlobal
-        if (excludes) arr = arr.concat(excludes)
-        let str = path.relative(parentPath, dest)
-        for (let i = 0; i < arr.length; i++) {
-          if (str.match(arr[i])) return false
-        }
-        return true
-      }
-    }
 
     // let is64bit = require('os').arch() === 'x64'
 
@@ -116,9 +104,8 @@ let install = (from, to, excludes = undefined, toDirUserDefined = {}) => {
     }
 
     for (let i of toEval) {
-      fse.copySync(`unzip\\${name}\\${i}`, toDir[i], opt)
+      require('./copy')(`unzip\\${name}\\${i}`, toDir[i], excludes)
     }
-
     return true
   }
 
@@ -129,6 +116,7 @@ let install = (from, to, excludes = undefined, toDirUserDefined = {}) => {
     let installed = install()
     return installed
   } catch (error) {
+    console.error(error)
     return false
   }
 }

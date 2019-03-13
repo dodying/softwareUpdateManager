@@ -24,23 +24,11 @@ let install = (from, to, excludes = undefined, filterInZip = '') => {
 
   let install = () => {
     let { dir: parentPath, name } = path.parse(to)
-
     while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 
     cp.execSync(`plugins\\7z.exe x -y -o"unzip\\${name}\\" "${from}" ${filterInZip || ''}`)
-    let opt = {
-      filter: (src, dest) => {
-        let arr = require('./../config').excludeGlobal
-        if (excludes) arr = arr.concat(excludes)
-        let str = path.relative(parentPath, dest)
-        for (let i = 0; i < arr.length; i++) {
-          if (str.match(arr[i])) return false
-        }
-        return true
-      }
-    }
     let fromNew = `unzip\\${name}`
     let list = fse.readdirSync(fromNew)
     while (list.length === 1) {
@@ -52,7 +40,7 @@ let install = (from, to, excludes = undefined, filterInZip = '') => {
       list = fse.readdirSync(fromNew)
     }
 
-    fse.copySync(fromNew, parentPath, opt)
+    require('./copy')(fromNew, parentPath, excludes)
     return true
   }
 
@@ -63,6 +51,7 @@ let install = (from, to, excludes = undefined, filterInZip = '') => {
     let installed = install()
     return installed
   } catch (error) {
+    console.error(error)
     return false
   }
 }
