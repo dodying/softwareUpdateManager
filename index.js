@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.489
+// @Version:            1.1.497
 // @Author:             dodying
-// @Date:               2019-3-14 16:05:16
+// @Date:               2019-3-14 17:54:52
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -366,6 +366,7 @@ softwareList.forEach(i => {
 })
 
 var fns = {
+  cheerio,
   getNow,
   spawnSync,
   req,
@@ -444,6 +445,7 @@ function reqOption (uri, useProxy = false, option = {}) {
       }
     }
   }
+  console.log(`${option.method}${option.proxy ? '+proxy' : ''}:\t${uri}`)
   return option
 }
 
@@ -1180,7 +1182,7 @@ async function init () {
     if ([-2].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}`)
     console.log(`Location:\t${iPath}`)
     console.log(`Version:\t${version}`)
-    if (software[i].url) console.log(`Url:\t${software[i].url}`)
+    // if (software[i].url) console.log(`Url:\t${software[i].url}`)
 
     if ([3].includes(mode) && 'install' in software[i]) {
       if (fse.existsSync(iPath) && !versionMax(database[i].version, versionLocal)) continue
@@ -1203,7 +1205,7 @@ async function init () {
     if (!software[i].url && siteList.length) {
       siteNow = Object.keys(software[i].site)[0]
       software[i].url = software[i].site[siteNow]
-      console.log(`Site ${siteNow}:\t${software[i].url}`)
+      // console.log(`Site ${siteNow}:\t${software[i].url}`)
       software[i].version = require('./templates/' + siteNow).version
       software[i].download = require('./templates/' + siteNow).download
     }
@@ -1214,7 +1216,7 @@ async function init () {
       } else {
         siteNow = siteList[siteList.indexOf(siteNow) + 1]
         software[i].url = software[i].site[siteNow]
-        console.log(`Site ${siteNow}:\t${software[i].url}`)
+        // console.log(`Site ${siteNow}:\t${software[i].url}`)
         software[i].version = require('./templates/' + siteNow).version
         software[i].download = require('./templates/' + siteNow).download
         result = await getLatestVersion(i)
