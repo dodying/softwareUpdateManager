@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.356
+// @Version:            1.1.420
 // @Author:             dodying
-// @Date:               2019-3-13 08:32:24
+// @Date:               2019-3-14 14:22:37
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -11,7 +11,6 @@
 
 // 设置
 var _ = require('./config')
-const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins'
 
 // 导入原生模块
 const path = require('path')
@@ -29,7 +28,7 @@ const Agent2 = require('socks5-https-client/lib/Agent')
 const notifier = require('node-notifier')
 const merge = require('deepmerge')
 
-// Function
+// Console
 const color = {
   Reset: '\x1b[0m',
   Bright: '\x1b[1m',
@@ -63,6 +62,7 @@ const _color = {
   error: color.BgRed
 
 }
+var consoleRaw = {}
 function logModify (colorMsg, args) {
   return args.map(i => {
     return typeof i === 'string' ? i.split('\n').map(j => {
@@ -77,7 +77,6 @@ function logModify (colorMsg, args) {
     }).join('\n') : i
   })
 }
-let consoleRaw = {}
 for (let i of ['log', 'warn', 'error']) {
   consoleRaw[i] = console[i]
   console[i] = (...args) => {
@@ -91,73 +90,22 @@ for (let i in readlineSync) {
   readlineSync[i] = text => raw(logModify(_color.warn, [text]))
 }
 
-const walk = require('./js/walk')
-const getNow = () => new Date().toLocaleString(_.locale, { hour12: false })
-const getVersion = async filepath => {
-  if (fse.existsSync(filepath)) {
-    let info
-    try {
-      info = await new Promise(resolve => {
-        cp.exec(`wmic DATAFILE where name="${filepath.replace(/[/\\]/g, '\\\\')}" get version`, (err, stdout, stderr) => {
-          if (err) {
-            resolve('0')
-          } else {
-            resolve(stdout)
-          }
-        })
-      })
-      if (info.match(/Version\s+([\d.]+)/)) return info.match(/Version\s+([\d.]+)/)[1]
-    } catch (error) {
-    }
-  }
-  return '0'
-}
-const spawnSync = (...argsForSpwan) => {
-  return new Promise(resolve => {
-    let child = cp.spawn(...argsForSpwan)
-    child.stdout.pipe(process.stdout)
-    child.stderr.pipe(process.stderr)
-    child.on('exit', function (code) {
-      let end
-      if (code.toString() !== '0') {
-        end = 'error'
-        console.error(`Command:\t${argsForSpwan[0]}\nCommand Args:${argsForSpwan[1].map(i => `{${i}}`).join(', ')}\nExit Code:\t${code.toString()}`)
-      } else {
-        end = true
-      }
-      resolve(end)
-    })
-  })
-}
-const versionMax = (v1, v2) => {
-  let arr1 = v1.split(/[.\-_]+/)
-  let arr2 = v2.split(/[.\-_]+/)
-  let length = Math.min(arr1.length, arr2.length)
-  for (let i = 0; i < length; i++) {
-    let str1 = arr1[i]
-    let str2 = arr2[i]
-    let float1 = parseFloat(str1)
-    let float2 = parseFloat(str2)
-    if (isNaN(float1) || isNaN(float2)) {
-      if (str1 > str2) {
-        return true
-      } else if (str1 < str2) {
-        return false
-      }
-    } else {
-      if (float1 > float2) {
-        return true
-      } else if (float1 < float2) {
-        return false
-      }
-    }
-  }
-  return arr1.length > arr2.length
-}
+// 全局函数
+// 处理config
+_.archivePath = path.resolve(__dirname, _.archivePath)
+_.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com')
 
-// Main
-let args = process.argv.splice(2)
-let argAlias = {
+const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins'
+
+var mode = -1
+
+var software = {}
+var softwareAll = require('./js/walk')('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, ''))
+var softwareList = mode === -2 ? softwareAll : Object.keys(_.software)
+var softwareFilter
+
+var args = process.argv.splice(2)
+var argAlias = {
   '-h': '--help',
   '-md': '--makemd',
   '-s': '--search',
@@ -170,11 +118,9 @@ let argAlias = {
   '-b': '--backup',
   '-i': '--install'
 }
-for (let i = 0; i < args.length; i++) {
-  if (args[i] in argAlias) args[i] = argAlias[args[i]]
-}
+args = args.map(i => argAlias[i] || i)
 
-let databaseFile = './database.json'
+var database; var databaseFile = './database.json'
 if (args.length && args.includes('--profile')) {
   let index = args.indexOf('--profile')
   let profile = args[index + 1]
@@ -187,19 +133,14 @@ if (args.length && args.includes('--profile')) {
   _ = _.profile[profile].deepmerge ? merge(_, _.profile[profile]) : Object.assign(_, _.profile[profile])
   delete _.profile
 }
-_.archivePath = path.resolve(__dirname, _.archivePath)
-_.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com')
-
-let database
 try {
   database = fse.existsSync(databaseFile) ? JSON.parse(fse.readFileSync(databaseFile, 'utf-8')) : {}
 } catch (error) {
   database = {}
 }
 
-let mode = -1
-var software = {}
-let softwareFilter
+var uriLast; var cookies = request.jar()
+
 if (args.length) {
   if (args.includes('--help')) {
     let notice = [
@@ -275,7 +216,7 @@ if (args.length) {
       let softwareSpecialInstaller = ''
 
       // let list = fse.readdirSync('software')
-      let list = walk('software').map(i => i.split(/[\\/]/).splice(1).join('/'))
+      let list = softwareAll
       for (let i = 0; i < list.length; i++) {
         if (path.parse(list[i]).dir === 'Invalid') continue
         if (fse.statSync(path.resolve('software', list[i])).isFile()) {
@@ -402,8 +343,6 @@ if (!softwareFilter) {
   }
 }
 
-let softwareList = mode === -2 ? walk('software').filter(i => !i.match('Invalid') && fse.statSync(i).isFile() && path.parse(i).ext === '.js').map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, '')) : Object.keys(_.software)
-
 softwareList.forEach(i => {
   let match = i.match(/^(.*):(.*)$/)
   let raw, version
@@ -428,8 +367,26 @@ softwareList.forEach(i => {
   }
 })
 
-var cookies = request.jar()
-var uriLast
+// Function
+function getNow () { return new Date().toLocaleString(_.locale, { hour12: false }) }
+
+function spawnSync (...argsForSpwan) {
+  return new Promise(resolve => {
+    let child = cp.spawn(...argsForSpwan)
+    child.stdout.pipe(process.stdout)
+    child.stderr.pipe(process.stderr)
+    child.on('exit', function (code) {
+      let end
+      if (code.toString() !== '0') {
+        end = 'error'
+        console.error(`Command:\t${argsForSpwan[0]}\nCommand Args:${argsForSpwan[1].map(i => `{${i}}`).join(', ')}\nExit Code:\t${code.toString()}`)
+      } else {
+        end = true
+      }
+      resolve(end)
+    })
+  })
+}
 
 function reqOption (uri, useProxy = false, option = {}) {
   if (typeof useProxy === 'object') [useProxy, option] = [false, useProxy]
@@ -495,6 +452,141 @@ async function req (uri, useProxy = false, option = {}) {
 function reqRaw (uri, useProxy = false, option = {}) {
   option = reqOption(uri, useProxy, option)
   return request(option)
+}
+
+function getHash (file, algorithm) {
+  // Hash algorithms: MD2 MD4 MD5 SHA1 SHA256 SHA384 SHA512
+  return cp.spawnSync('certutil', ['-hashfile', file, algorithm]).output[1].toString().split(/[\r\n]+/)[1]
+}
+
+// Main-version
+
+async function getLatestVersion (i) {
+  let iEscaped = i.replace(/[:*?"<>|]/g, '-')
+
+  software[i].retry = software[i].retry + 1
+  let res = await req(software[i].url, software[i].useProxy)
+  if (res instanceof Error) console.error(`Try ${software[i].retry}:\t${res.message}`)
+
+  let returnValue
+  if (res && (res.statusMessage === 'OK' || res.statusCode === 200)) {
+    returnValue = await (async function () {
+      let $ = cheerio.load(res.body)
+      if (_.debug) {
+        let parentPath = path.parse(`html/${iEscaped}.html`).dir
+        if (!fse.existsSync(parentPath)) fse.mkdirsSync(parentPath)
+        fse.writeFileSync(`html/${iEscaped}.html`, res.body)
+        fse.writeJsonSync(`html/${iEscaped}.json`, res, {
+          spaces: 2,
+          replacer: function replacer (key, value) {
+            if (key === 'body') return undefined
+            return value
+          }
+        })
+      }
+
+      let version
+      if ('selector' in software[i].version) {
+        version = $(software[i].version.selector)
+        if (version.length === 0) {
+          console.error(`Error:\tCan't get the element when get version\nSelector:\t${software[i].version.selector}`)
+          return null
+        }
+
+        version = version.eq(0)
+        if (!('attr' in software[i].version)) software[i].version.attr = 'text'
+        version = software[i].version.attr === 'text' ? version.text() : software[i].version.attr === 'html' ? version.html() : version.attr(software[i].version.attr)
+        version = version.trim()
+        if (version === '') {
+          console.error(`Error:\tThe attribute of the element is empty when get version`)
+          return null
+        }
+        let regexp = software[i].version.match || /(\d+[\d.]+\d+)/
+        version = version.match(regexp)
+        if (!version) {
+          console.error(`Error:\tCan't match the RegExp of the Text when get version\nText:\t${version}\nRegExp:\t${regexp}`)
+          return null
+        }
+
+        version = version.length > 1 ? version[1] : version[0]
+      } else if ('func' in software[i].version) {
+        try {
+          version = await software[i].version.func(res, $, req, cheerio, software[i].versionChoice)
+          if (!version) {
+            console.error(`Error:\t"func" return nothing when get version`)
+            return null
+          }
+        } catch (error) {
+          console.error(error)
+          return null
+        }
+      } else {
+        console.error(`Error:\tNo "selector"/"func" in "version"`)
+        return null
+      }
+      version = version.replace(/[\\/:*?"<>|]/g, '-')
+      return { version, res, $ }
+    })()
+  } else if (res.statusCode) {
+    console.error(`Try ${software[i].retry}:\t${res.statusCode} ${res.statusMessage}`)
+  }
+
+  if (returnValue) {
+    return returnValue
+  } else if (returnValue === null) {
+    return null
+  } else if (_.request.retry > software[i].retry) {
+    software[i].useProxy = !software[i].useProxy
+    return getLatestVersion(i)
+  } else {
+    return null
+  }
+}
+
+async function getVersion (filepath) {
+  if (fse.existsSync(filepath)) {
+    let info
+    try {
+      info = await new Promise(resolve => {
+        cp.exec(`wmic DATAFILE where name="${filepath.replace(/[/\\]/g, '\\\\')}" get version`, (err, stdout, stderr) => {
+          if (err) {
+            resolve('0')
+          } else {
+            resolve(stdout)
+          }
+        })
+      })
+      if (info.match(/Version\s+([\d.]+)/)) return info.match(/Version\s+([\d.]+)/)[1]
+    } catch (error) {
+    }
+  }
+  return '0'
+}
+
+function versionMax (v1, v2) {
+  let arr1 = v1.split(/[.\-_]+/)
+  let arr2 = v2.split(/[.\-_]+/)
+  let length = Math.min(arr1.length, arr2.length)
+  for (let i = 0; i < length; i++) {
+    let str1 = arr1[i]
+    let str2 = arr2[i]
+    let float1 = parseFloat(str1)
+    let float2 = parseFloat(str2)
+    if (isNaN(float1) || isNaN(float2)) {
+      if (str1 > str2) {
+        return true
+      } else if (str1 < str2) {
+        return false
+      }
+    } else {
+      if (float1 > float2) {
+        return true
+      } else if (float1 < float2) {
+        return false
+      }
+    }
+  }
+  return arr1.length > arr2.length
 }
 
 async function downloadFile (uri, i, target) {
@@ -610,102 +702,7 @@ async function downloadFile (uri, i, target) {
   })
 }
 
-function doBeforeExit () {
-  if (_.debug) {
-    let cookiesRaw = fse.existsSync('cookies.json') ? fse.readJSONSync('cookies.json') : {}
-    let cookiesNew = JSON.parse(JSON.stringify(cookies))._jar.cookies
-    cookiesNew = cookiesNew.concat(cookiesRaw).filter((item, index, array) => array.indexOf(array.filter(item2 => item2.key === item.key && item2.domain === item.domain && item2.path === item.path)[0]) === index)
-    fse.writeJSONSync('cookies.json', cookiesNew, { spaces: 2 })
-  } else {
-    cookies = request.jar()
-  }
-  if (fse.existsSync('cookies.txt')) fse.removeSync('cookies.txt')
-  if ([-1, 0, 1, 3].includes(mode)) fse.writeFileSync(databaseFile, JSON.stringify(database, null, 2))
-  fse.removeSync(path.resolve(_.archivePath, 'unzip'))
-  fse.emptyDirSync('./unzip')
-}
-
-async function getLatestVersion (i) {
-  let iEscaped = i.replace(/[:*?"<>|]/g, '-')
-
-  software[i].retry = software[i].retry + 1
-  let res = await req(software[i].url, software[i].useProxy)
-  if (res instanceof Error) console.error(`Try ${software[i].retry}:\t${res.message}`)
-
-  let returnValue
-  if (res && (res.statusMessage === 'OK' || res.statusCode === 200)) {
-    returnValue = await (async function () {
-      let $ = cheerio.load(res.body)
-      if (_.debug) {
-        let parentPath = path.parse(`html/${iEscaped}.html`).dir
-        if (!fse.existsSync(parentPath)) fse.mkdirsSync(parentPath)
-        fse.writeFileSync(`html/${iEscaped}.html`, res.body)
-        fse.writeJsonSync(`html/${iEscaped}.json`, res, {
-          spaces: 2,
-          replacer: function replacer (key, value) {
-            if (key === 'body') return undefined
-            return value
-          }
-        })
-      }
-
-      let version
-      if ('selector' in software[i].version) {
-        version = $(software[i].version.selector)
-        if (version.length === 0) {
-          console.error(`Error:\tCan't get the element when get version\nSelector:\t${software[i].version.selector}`)
-          return null
-        }
-
-        version = version.eq(0)
-        if (!('attr' in software[i].version)) software[i].version.attr = 'text'
-        version = software[i].version.attr === 'text' ? version.text() : software[i].version.attr === 'html' ? version.html() : version.attr(software[i].version.attr)
-        version = version.trim()
-        if (version === '') {
-          console.error(`Error:\tThe attribute of the element is empty when get version`)
-          return null
-        }
-        let regexp = software[i].version.match || /(\d+[\d.]+\d+)/
-        version = version.match(regexp)
-        if (!version) {
-          console.error(`Error:\tCan't match the RegExp of the Text when get version\nText:\t${version}\nRegExp:\t${regexp}`)
-          return null
-        }
-
-        version = version.length > 1 ? version[1] : version[0]
-      } else if ('func' in software[i].version) {
-        try {
-          version = await software[i].version.func(res, $, req, cheerio, software[i].versionChoice)
-          if (!version) {
-            console.error(`Error:\t"func" return nothing when get version`)
-            return null
-          }
-        } catch (error) {
-          console.error(error)
-          return null
-        }
-      } else {
-        console.error(`Error:\tNo "selector"/"func" in "version"`)
-        return null
-      }
-      version = version.replace(/[\\/:*?"<>|]/g, '-')
-      return { version, res, $ }
-    })()
-  } else if (res.statusCode) {
-    console.error(`Try ${software[i].retry}:\t${res.statusCode} ${res.statusMessage}`)
-  }
-
-  if (returnValue) {
-    return returnValue
-  } else if (returnValue === null) {
-    return null
-  } else if (_.request.retry > software[i].retry) {
-    software[i].useProxy = !software[i].useProxy
-    return getLatestVersion(i)
-  } else {
-    return null
-  }
-}
+// Main-download
 
 function getExt (uri) {
   let uri1 = uri.replace('/download', '')
@@ -943,6 +940,8 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   }
 }
 
+// Main-virus
+
 async function virusCheckFile (file) {
   let sha256 = getHash(file, 'sha256')
 
@@ -1001,6 +1000,8 @@ async function virusCheckFile (file) {
   return ratio <= _.virus.safeDetectionRatio
 }
 
+// Main-install
+
 async function installLatestVersion (i, output, iPath) {
   if (!_.ignoreWarn.preferPath && software[i].preferPath && iPath.toLowerCase().substr(-software[i].preferPath.length).replace(/\\/g, '/') !== software[i].preferPath.toLowerCase()) {
     console.warn(`Warn:\tThe path you given don't have preferred\nTarget:\t${iPath}\nPreferPath:\t${software[i].preferPath}`)
@@ -1025,11 +1026,24 @@ async function installLatestVersion (i, output, iPath) {
   return installed
 }
 
-function getHash (file, algorithm) {
-  // Hash algorithms: MD2 MD4 MD5 SHA1 SHA256 SHA384 SHA512
-  return cp.spawnSync('certutil', ['-hashfile', file, algorithm]).output[1].toString().split(/[\r\n]+/)[1]
+// Main-clean
+
+function doBeforeExit () {
+  if (_.debug) {
+    let cookiesRaw = fse.existsSync('cookies.json') ? fse.readJSONSync('cookies.json') : {}
+    let cookiesNew = JSON.parse(JSON.stringify(cookies))._jar.cookies
+    cookiesNew = cookiesNew.concat(cookiesRaw).filter((item, index, array) => array.indexOf(array.filter(item2 => item2.key === item.key && item2.domain === item.domain && item2.path === item.path)[0]) === index)
+    fse.writeJSONSync('cookies.json', cookiesNew, { spaces: 2 })
+  } else {
+    cookies = request.jar()
+  }
+  if (fse.existsSync('cookies.txt')) fse.removeSync('cookies.txt')
+  if ([-1, 0, 1, 3].includes(mode)) fse.writeFileSync(databaseFile, JSON.stringify(database, null, 2))
+  fse.removeSync(path.resolve(_.archivePath, 'unzip'))
+  fse.emptyDirSync('./unzip')
 }
 
+// Main
 async function init () {
   if (['--makemd'].some(i => args.includes(i))) return
 
