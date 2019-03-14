@@ -13,8 +13,8 @@ let data = {
 module.exports = data
 `
 
-let search = async (req, cheerio, keyword) => {
-  let res = await req('https://www.softpedia.com/_xaja/programfinder.php', {
+let search = async (fns, keyword) => {
+  let res = await fns.req('https://www.softpedia.com/_xaja/programfinder.php', {
     method: 'POST',
     form: {
       f: '0,2,4',

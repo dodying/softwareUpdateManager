@@ -1,15 +1,15 @@
 'use strict'
 
-let getDownloadUrl = async (res, $, req, cheerio) => {
+let getDownloadUrl = async (res, $, fns) => {
   let id = res.request.uri.href.match(/(\d+)$/)[1]
-  let res1 = await req('https://neosmart.net/Download/Register', {
+  let res1 = await fns.req('https://neosmart.net/Download/Register', {
     method: 'POST',
     form: {
       id: id
     }
   })
-  let $1 = cheerio.load(res1.body)
-  let res2 = await req('https://neosmart.net/Download/ThankYou', {
+  let $1 = fns.cheerio.load(res1.body)
+  let res2 = await fns.req('https://neosmart.net/Download/ThankYou', {
     method: 'POST',
     form: {
       name: 'admin',

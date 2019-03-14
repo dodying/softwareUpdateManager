@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.420
+// @Version:            1.1.489
 // @Author:             dodying
-// @Date:               2019-3-14 14:22:37
+// @Date:               2019-3-14 16:05:16
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -27,6 +27,7 @@ const Agent = require('socks5-http-client/lib/Agent')
 const Agent2 = require('socks5-https-client/lib/Agent')
 const notifier = require('node-notifier')
 const merge = require('deepmerge')
+const walk = require('./js/walk')
 
 // Console
 const color = {
@@ -97,13 +98,6 @@ _.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforg
 
 const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins'
 
-var mode = -1
-
-var software = {}
-var softwareAll = require('./js/walk')('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, ''))
-var softwareList = mode === -2 ? softwareAll : Object.keys(_.software)
-var softwareFilter
-
 var args = process.argv.splice(2)
 var argAlias = {
   '-h': '--help',
@@ -139,8 +133,8 @@ try {
   database = {}
 }
 
-var uriLast; var cookies = request.jar()
-
+var softwareFilter
+var mode = -1
 if (args.length) {
   if (args.includes('--help')) {
     let notice = [
@@ -335,6 +329,10 @@ if (args.length) {
   }
 }
 
+var software = {}
+var softwareAll = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, ''))
+var softwareList = mode === -2 ? softwareAll : Object.keys(_.software)
+
 if (!softwareFilter) {
   if (args.length === 0) {
     softwareFilter = () => true
@@ -366,6 +364,25 @@ softwareList.forEach(i => {
     }
   }
 })
+
+var fns = {
+  getNow,
+  spawnSync,
+  req,
+  reqRaw,
+  getHash
+}
+walk('js', { nodir: true, matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, '')).forEach(i => {
+  let arr = i.split(/[/_]/)
+  let obj = fns
+  for (let j = 0; j < arr.length - 1; j++) {
+    if (!(arr[j] in obj)) obj[arr[j]] = {}
+    obj = obj[arr[j]]
+  }
+  obj[arr[arr.length - 1]] = require(`./js/${i}.js`)
+})
+
+var uriLast; var cookies = request.jar()
 
 // Function
 function getNow () { return new Date().toLocaleString(_.locale, { hour12: false }) }
@@ -511,7 +528,7 @@ async function getLatestVersion (i) {
         version = version.length > 1 ? version[1] : version[0]
       } else if ('func' in software[i].version) {
         try {
-          version = await software[i].version.func(res, $, req, cheerio, software[i].versionChoice)
+          version = await software[i].version.func(res, $, fns, software[i].versionChoice)
           if (!version) {
             console.error(`Error:\t"func" return nothing when get version`)
             return null
@@ -756,7 +773,7 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
     download = software[i].download.match ? download.match(software[i].download.match)[1] : download
   } else if ('func' in software[i].download) {
     try {
-      download = await software[i].download.func(res, $, req, cheerio, software[i].downloadChoice)
+      download = await software[i].download.func(res, $, fns, software[i].downloadChoice)
       if (!download) {
         console.error(`Error:\t"func" return nothing when get download`)
         return null
@@ -1008,7 +1025,7 @@ async function installLatestVersion (i, output, iPath) {
     if (!readlineSync.keyInYNStrict('Continue to install?')) return false
   }
 
-  if ('beforeInstall' in software[i]) await software[i].beforeInstall(output, iPath)
+  if ('beforeInstall' in software[i]) await software[i].beforeInstall(output, iPath, fns)
   if (_.specialMode[i] === 3 || (!software[i].commercial && _.mode === 3) || (software[i].commercial && _.commercialMode === 3)) {
     if (software[i].install.toString().match(/install_single/)) {
       fse.removeSync(iPath)
@@ -1016,9 +1033,9 @@ async function installLatestVersion (i, output, iPath) {
       fse.removeSync(path.parse(iPath).dir)
     }
   }
-  let installed = await software[i].install(output, iPath, software[i].installChoice)
+  let installed = await software[i].install(output, iPath, fns, software[i].installChoice)
   if (installed) {
-    if ('afterInstall' in software[i]) await software[i].afterInstall(output, iPath)
+    if ('afterInstall' in software[i]) await software[i].afterInstall(output, iPath, fns)
     if (!_.preserveArchive) fse.removeSync(output)
   } else {
     console.error(`Software:\t${i}\nError:\tSkipped\nLocation:\t${output}\nTarget:\t${iPath}`)
@@ -1074,7 +1091,7 @@ async function init () {
 
     for (let i of list) {
       console.log(`Searching:\t${i}`)
-      let tmp = await require('./js/search/' + i + '.js')(req, cheerio, keyword)
+      let tmp = await require('./js/search/' + i + '.js')(fns, keyword)
       result = result.concat(tmp)
     }
 

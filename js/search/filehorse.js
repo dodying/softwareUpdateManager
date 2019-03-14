@@ -13,9 +13,9 @@ let data = {
 module.exports = data
 `
 
-let search = async (req, cheerio, keyword) => {
-  let res = await req('https://www.filehorse.com/search?q=' + keyword)
-  let $ = cheerio.load(res.body)
+let search = async (fns, keyword) => {
+  let res = await fns.req('https://www.filehorse.com/search?q=' + keyword)
+  let $ = fns.cheerio.load(res.body)
   return $('.software_list>li:not(.ads,.no_match)').map((index, item) => {
     let url = $(item).find('h3>a').attr('href')
     let length = url.match(/\/download-(.*?)(|-32|-64)\//)[1].length

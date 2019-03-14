@@ -7,9 +7,9 @@ let data = {
     match: /(.*)/
   },
   download: {
-    func: async (res, $, req, cheerio) => {
-      let res1 = await req($('.download-button').eq(0).attr('href'))
-      let $1 = cheerio.load(res1.body)
+    func: async (res, $, fns) => {
+      let res1 = await fns.req($('.download-button').eq(0).attr('href'))
+      let $1 = fns.cheerio.load(res1.body)
       return $1('#download-link').attr('href')
     },
     output: '.zip'
