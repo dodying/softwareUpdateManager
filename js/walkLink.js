@@ -28,21 +28,18 @@ let walkLink = async (link, fns, ...selectors) => {
   let order = []
 
   for (let i = 0; i < selectors.length;) {
-    console.log(uri[i])
     if (!res[i] || res[i].request.uri.href !== uri[i]) res[i] = await fns.req(uri[i])
     let $ = fns.cheerio.load(res[i].body)
     if (!order[i]) order[i] = 0
 
-    let { selector, attr: attributeName, match, sort } = typeof selectors[i] === 'string' ? { selector: selectors[i] } : selectors[i]
-    let ele = $(selector).toArray()
-    if (sort) ele = ele.sort((a, b) => compare($(a).text(), $(b).text()))
-    let error = false
-    if (!ele.length) {
-      error = true
-    } else if (ele.length <= order[i]) {
-      error = true
-    } else {
-      ele = ele[order[i]]
+    let { selector, attr: attributeName, match, matchCheck, sort } = typeof selectors[i] === 'string' ? { selector: selectors[i] } : selectors[i]
+    let eles = $(selector).toArray()
+    if (sort) eles = eles.sort((a, b) => compare($(a).text(), $(b).text()))
+
+    let find = false
+
+    for (let j = order[i]; j < eles.length; j++) {
+      let ele = eles[j]
       let attr
 
       if (attributeName === 'text') {
@@ -52,24 +49,26 @@ let walkLink = async (link, fns, ...selectors) => {
       } else {
         attr = $(ele).eq(0).attr(attributeName || 'href')
       }
+      attr = attr.trim()
+
       if (attr) {
-        let matched = attr.trim().match(match || /(.*)/)[1]
-        if (matched) {
+        let matched = attr.match(match || /(.*)/)
+        let checked = attr.match(matchCheck || /(.*)/)
+        if (matched && matched[1] && checked) {
+          order[i] = j
           i = i + 1
           if (i === selectors.length) {
-            return matched
+            return matched[1]
           } else {
-            uri[i] = matched
-            continue
+            uri[i] = matched[1]
+            find = true
+            break
           }
-        } else {
-          error = true
         }
-      } else {
-        error = true
       }
     }
-    if (error) {
+
+    if (!find) {
       if (i === 0) {
         return false
       } else {
