@@ -35,15 +35,17 @@
 ##### 使用方法
 
 1. `git clone https://github.com/dodying/softwareUpdateManager`
-2. `git clone https://github.com/dodying/software-for-softwareUpdateManager`，并移动 **software** 到 **softwareUpdateManager** 下
-3. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
-4. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
+2. `npm install`
+3. `git clone https://github.com/dodying/software-for-softwareUpdateManager`
+  并移动 **software** 到 **softwareUpdateManager** 下
+4. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
+5. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
 
 ##### 其他说明
 
 1. 以下软件，如果`通常版(installer)`与`便携版(portable)`功能相同则一般以绿色版优先(如果安装版的包小许多，则可能以安装版优先)，同时64位优先
 2. 大多软件都支持自动安装
-3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion)， 带 :airplane: 的需**番羽土墙**， 带 :hand: 的需**手动安装**
+3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion)， 带 :airplane: 的需**番羽土墙**， 带 :hand: 的需**手动下载/安装**， 带 :pushpin: 的表示**安装目录固定**
 4. 代理优先级(前提是设置了代理): `config.urlWithoutProxy > config.urlWithProxy > config.useProxy > software.useProxy`
 5. 模式优先级: `config.specialMode > config.mode = config.commercialSoftware`
 6. 安装方法并没有一一测试，如果自动安装失败，请尝试手动安装

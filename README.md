@@ -35,15 +35,17 @@
 ##### 使用方法
 
 1. `git clone https://github.com/dodying/softwareUpdateManager`
-2. `git clone https://github.com/dodying/software-for-softwareUpdateManager`，并移动 **software** 到 **softwareUpdateManager** 下
-3. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
-4. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
+2. `npm install`
+3. `git clone https://github.com/dodying/software-for-softwareUpdateManager`
+  并移动 **software** 到 **softwareUpdateManager** 下
+4. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
+5. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
 
 ##### 其他说明
 
 1. 以下软件，如果`通常版(installer)`与`便携版(portable)`功能相同则一般以绿色版优先(如果安装版的包小许多，则可能以安装版优先)，同时64位优先
 2. 大多软件都支持自动安装
-3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion)， 带 :airplane: 的需**番羽土墙**， 带 :hand: 的需**手动安装**
+3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion)， 带 :airplane: 的需**番羽土墙**， 带 :hand: 的需**手动下载/安装**， 带 :pushpin: 的表示**安装目录固定**
 4. 代理优先级(前提是设置了代理): `config.urlWithoutProxy > config.urlWithProxy > config.useProxy > software.useProxy`
 5. 模式优先级: `config.specialMode > config.mode = config.commercialSoftware`
 6. 安装方法并没有一一测试，如果自动安装失败，请尝试手动安装
@@ -264,12 +266,12 @@ module.exports = data
 11. [Abelssoft/CheckDrive](https://www.abelssoft.de/en/windows/System-Utilities/CheckDrive) :money_with_wings: Sluggish hard drive? The hard drive doctor can see a hard drive failure coming and warn you ahead of time!
 12. [Abelssoft/Converter4Video](https://www.abelssoft.de/en/windows/Multimedia/Converter4Video) :money_with_wings: This program allows you to convert videos into dozens of different formats.
 13. [Abelssoft/Cryptbox](https://www.abelssoft.de/en/windows/Security-Privacy/Cryptbox) :money_with_wings: CryptBox uses 256-bit encryption to tightly safegaurd your data. And it does so with a single click.
-14. [Abelssoft/EasyBackup](https://www.abelssoft.de/en/windows/System-Utilities/EasyBackup) :money_with_wings: Meta-Description: Backup easy, fast & reliable✔ With Ransomware-protection✔ Without prior knowledge✔ Without Installation✔ State-of-the-art technology for less storage consumption✔
+14. [Abelssoft/EasyBackup](https://www.abelssoft.de/en/windows/System-Utilities/EasyBackup) :money_with_wings: Meta-Description: Backup easy, fast & reliable
 15. [Abelssoft/EverDoc](https://www.abelssoft.de/en/windows/Helpers/EverDoc) :money_with_wings: A paperless office isn’t only a dream anymore. EverDoc is the document management of the future!
-16. [Abelssoft/File Organizer](https://www.abelssoft.de/en/windows/Helpers/Abelssoft-File-Organizer) :money_with_wings: Fully automatically clean up the PC or have the mess on the desktop removed? Then have a look at this tool! Try ✔Jetzt for free!
+16. [Abelssoft/File Organizer](https://www.abelssoft.de/en/windows/Helpers/Abelssoft-File-Organizer) :money_with_wings: Fully automatically clean up the PC or have the mess on the desktop removed? Then have a look at this tool! Try
 17. [Abelssoft/FileFusion](https://www.abelssoft.de/en/windows/System-Utilities/FileFusion) :money_with_wings: Find duplicate files and save up to 31% of space. Test for free now!
 18. [Abelssoft/FileWing Shredder](https://www.abelssoft.de/en/windows/Security-Privacy/FileWing-Shredder) :money_with_wings: Permanent delete of sensitive data is crucial. With FileWing Shredder, it is also extremely easy.
-19. [Abelssoft/Find My Files](https://www.abelssoft.de/en/windows/Helpers/Find-My-Files) :money_with_wings: Find Files Quickly ✔ Find Documents, Photos, Music And More ✔ Intelligent Search Method For The PC✔ Fast And Complete Search Result✔ High Speed✔ Intuitive Operation
+19. [Abelssoft/Find My Files](https://www.abelssoft.de/en/windows/Helpers/Find-My-Files) :money_with_wings: Find Files Quickly
 20. [Abelssoft/FolderVisualizer](https://www.abelssoft.de/en/windows/Helpers/FolderVisualizer) :money_with_wings: Hard disk full? With this tool, you will find the biggest culprits at a glance. Download now!
 21. [Abelssoft/GClean](https://www.abelssoft.de/en/windows/Security-Privacy/GClean) :money_with_wings: GClean stops the transmission of usage data and makes anonomyous usage of Google services possible.
 22. [Abelssoft/HackCheck](https://www.abelssoft.de/en/windows/Security-Privacy/HackCheck) :money_with_wings: HackCheck warns in case of hacking attacks ☠ Monitors your accounts  🔍 Gives you an alert in case of hacker attack
@@ -280,8 +282,8 @@ module.exports = data
 27. [Abelssoft/MyKeyFinder](https://www.abelssoft.de/en/windows/Helpers/MyKeyFinder) :money_with_wings: Missing your product key? MyKeyFinder finds all installed licence keys and lists them in a clear way!
 28. [Abelssoft/PC Fresh](https://www.abelssoft.de/en/windows/System-Utilities/PC-Fresh) :money_with_wings: PC Fresh provides a professional optimization of Windows, allowing you to unleash the full potential of your PC.
 29. [Abelssoft/PDFCompressor](https://www.abelssoft.de/en/windows/Helpers/PDFCompressor) :money_with_wings: You can reduce the size of PDFs by up to 80%. Especially great if sending emails is a “big deal” for you.
-30. [Abelssoft/Photastic](https://www.abelssoft.de/en/windows/Multimedia/Photastic) :money_with_wings: Improved and repaired Fotos✔ Automatically photo optimization and restoration ✔ Without prior knowledge to glossy results✔ Complex image editing
-31. [Abelssoft/PhotoBoost](https://www.abelssoft.de/en/windows/Multimedia/PhotoBoost) :money_with_wings: Optimizes photos with one click✔ Photo Enhancement automatically✔ Without knowledge✔ Pictures beautify within seconds✔ Image Optimization made in Germany ✔
+30. [Abelssoft/Photastic](https://www.abelssoft.de/en/windows/Multimedia/Photastic) :money_with_wings: Improved and repaired Fotos
+31. [Abelssoft/PhotoBoost](https://www.abelssoft.de/en/windows/Multimedia/PhotoBoost) :money_with_wings: Optimizes photos with one click
 32. [Abelssoft/PriWeb](https://www.abelssoft.de/en/windows/Security-Privacy/PriWeb) :money_with_wings: Surfing the Internet anonymously or doing online banking securely. PriWeb offers premium VPN cover made in Germany. Try it out now for free!
 33. [Abelssoft/Recordify](https://www.abelssoft.de/en/windows/Multimedia/Recordify) :money_with_wings: Download and save music for free! Very easily with Recordify! Try it now!
 34. [Abelssoft/Registry Cleaner](https://www.abelssoft.de/en/windows/System-Utilities/Abelssoft-Registry-Cleaner) :money_with_wings: Inexplicable Windows error? This utility eliminates stubborn problems and gives your Windows registry a overhaul!
@@ -3011,113 +3013,113 @@ module.exports = data
 ##### Special Installer
 ###### 特殊的安装方式(作为参考)
 
-1. [Advanced IP Scanner](software/Advanced%20IP%20Scanner.js)
-2. [AIMP](software/AIMP.js)
-3. [AppleApplicationSupport](software/AppleApplicationSupport.js)
-4. [AutoHotkey](software/AutoHotkey.js)
-5. [Bandisoft Bandizip](software/Bandisoft%20Bandizip.js)
-6. [Bandisoft Honeyview](software/Bandisoft%20Honeyview.js)
-7. [CocosCreator](software/CocosCreator.js)
-8. [Directory Opus](software/Directory%20Opus.js)
-9. [Evernote](software/Evernote.js)
-10. [Fork](software/Fork.js)
-11. [GIMP](software/GIMP.js)
-12. [IObit/Driver Booster](software/IObit/Driver%20Booster.js)
-13. [KingSoft/WPS](software/KingSoft/WPS.js)
-14. [MinGW-w64](software/MinGW-w64.js)
-15. [Mythicsoft/Agent Ransack](software/Mythicsoft/Agent%20Ransack.js)
-16. [Npcap](software/Npcap.js)
-17. [Python](software/Python.js)
-18. [Python2](software/Python2.js)
-19. [SmartGit](software/SmartGit.js)
-20. [uTorrent](software/uTorrent.js)
-21. [VirtualBox](software/VirtualBox.js)
-22. [Weasel](software/Weasel.js)
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
 
 
 ##### Without Download
 ###### 缺少下载地址
 
-1. [CnkiDownloader](software/CnkiDownloader.js)
-2. [Enigma Virtual Box unpacker](software/Enigma%20Virtual%20Box%20unpacker.js)
-3. [shadowsocks-qt5](software/shadowsocks-qt5.js)
-4. [Universal Extractor mod by koros aka ya158](software/Universal%20Extractor%20mod%20by%20koros%20aka%20ya158.js)
-5. [天若OCR](software/%E5%A4%A9%E8%8B%A5OCR.js)
+[Ad Muncher](/dodying/software-for-softwareUpdateManager/blob/master/software/Ad%20Muncher.js)[Advanced IP Scanner](/dodying/software-for-softwareUpdateManager/blob/master/software/Advanced%20IP%20Scanner.js)[AIMP](/dodying/software-for-softwareUpdateManager/blob/master/software/AIMP.js)[AppleApplicationSupport](/dodying/software-for-softwareUpdateManager/blob/master/software/AppleApplicationSupport.js)[AutoHotkey](/dodying/software-for-softwareUpdateManager/blob/master/software/AutoHotkey.js)[avidemux](/dodying/software-for-softwareUpdateManager/blob/master/software/avidemux.js)[Balabolka](/dodying/software-for-softwareUpdateManager/blob/master/software/Balabolka.js)[Bandisoft Bandizip](/dodying/software-for-softwareUpdateManager/blob/master/software/Bandisoft%20Bandizip.js)[Bandisoft Honeyview](/dodying/software-for-softwareUpdateManager/blob/master/software/Bandisoft%20Honeyview.js)[BinaryMark/Advanced File Finder](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Advanced%20File%20Finder.js)[BinaryMark/All the Best YouTube Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/All%20the%20Best%20YouTube%20Downloader.js)[BinaryMark/Batch Docs](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Docs.js)[BinaryMark/Batch Encoding Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Encoding%20Converter.js)[BinaryMark/Batch File Encrypt](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Encrypt.js)[BinaryMark/Batch File Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Manager.js)[BinaryMark/Batch File Rename](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Rename.js)[BinaryMark/Batch File Replace](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Replace.js)[BinaryMark/Batch File Split & Join](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Split%20&%20Join.js)[BinaryMark/Batch Files](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Files.js)[BinaryMark/Batch Hex Editor](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Hex%20Editor.js)[BinaryMark/Batch Image Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Converter.js)[BinaryMark/Batch Image Enhancer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Enhancer.js)[BinaryMark/Batch Image Resizer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Resizer.js)[BinaryMark/Batch Image Splitter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Splitter.js)[BinaryMark/Batch Image Watermarker](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Watermarker.js)[BinaryMark/Batch Images](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Images.js)[BinaryMark/Batch Photo Face](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Photo%20Face.js)[BinaryMark/Batch RegEx](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20RegEx.js)[BinaryMark/Batch Text File Editor](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Text%20File%20Editor.js)[BinaryMark/Batch Word Replace](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Word%20Replace.js)[BinaryMark/Biorhythms Calculator 2018](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Biorhythms%20Calculator%202018.js)[BinaryMark/Blogspot & Tumblr Image Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Blogspot%20&%20Tumblr%20Image%20Downloader.js)[BinaryMark/Color Picker Pro](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Color%20Picker%20Pro.js)[BinaryMark/Database E-Mailer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Database%20E-Mailer.js)[BinaryMark/File Hash Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/File%20Hash%20Generator.js)[BinaryMark/Password Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Password%20Generator.js)[BinaryMark/Random Item Picker](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Random%20Item%20Picker.js)[BinaryMark/Random Number Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Random%20Number%20Generator.js)[BinaryMark/Streaming Video Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Streaming%20Video%20Downloader.js)[BinaryMark/Text to MP3 Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Text%20to%20MP3%20Converter.js)[Blue Iris](/dodying/software-for-softwareUpdateManager/blob/master/software/Blue%20Iris.js)[cFos Software/cFos Broadband Connect](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Broadband%20Connect.js)[cFos Software/cFos IPv6 Link](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20IPv6%20Link.js)[cFos Software/cFos Outlook DAV](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Outlook%20DAV.js)[cFos Software/cFos Personal Net](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Personal%20Net.js)[cFos Software/cFos](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos.js)[cFos Software/cFosSpeed](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFosSpeed.js)[ChemTable/Autorun Organizer](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Autorun%20Organizer.js)[ChemTable/Registry Life](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Registry%20Life.js)[ChemTable/Soft Organizer](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Soft%20Organizer.js)[Classic Shell](/dodying/software-for-softwareUpdateManager/blob/master/software/Classic%20Shell.js)[Cloudevo](/dodying/software-for-softwareUpdateManager/blob/master/software/Cloudevo.js)[Clover](/dodying/software-for-softwareUpdateManager/blob/master/software/Clover.js)1. [CnkiDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/CnkiDownloader.js)
+[CocosCreator](/dodying/software-for-softwareUpdateManager/blob/master/software/CocosCreator.js)[CuteFTP](/dodying/software-for-softwareUpdateManager/blob/master/software/CuteFTP.js)[Directory Opus](/dodying/software-for-softwareUpdateManager/blob/master/software/Directory%20Opus.js)[EasyDrv](/dodying/software-for-softwareUpdateManager/blob/master/software/EasyDrv.js)2. [Enigma Virtual Box unpacker](/dodying/software-for-softwareUpdateManager/blob/master/software/Enigma%20Virtual%20Box%20unpacker.js)
+[Evernote](/dodying/software-for-softwareUpdateManager/blob/master/software/Evernote.js)[fman](/dodying/software-for-softwareUpdateManager/blob/master/software/fman.js)[Fork](/dodying/software-for-softwareUpdateManager/blob/master/software/Fork.js)[FreeFileSync](/dodying/software-for-softwareUpdateManager/blob/master/software/FreeFileSync.js)[GIMP](/dodying/software-for-softwareUpdateManager/blob/master/software/GIMP.js)[IObit/Driver Booster](/dodying/software-for-softwareUpdateManager/blob/master/software/IObit/Driver%20Booster.js)[KingSoft/WPS](/dodying/software-for-softwareUpdateManager/blob/master/software/KingSoft/WPS.js)[MinGW-w64](/dodying/software-for-softwareUpdateManager/blob/master/software/MinGW-w64.js)[Mythicsoft/Agent Ransack](/dodying/software-for-softwareUpdateManager/blob/master/software/Mythicsoft/Agent%20Ransack.js)[Npcap](/dodying/software-for-softwareUpdateManager/blob/master/software/Npcap.js)[OpalCalc](/dodying/software-for-softwareUpdateManager/blob/master/software/OpalCalc.js)[Paragon/Paragon Disk Wiper Professional](/dodying/software-for-softwareUpdateManager/blob/master/software/Paragon/Paragon%20Disk%20Wiper%20Professional.js)[Paragon/Paragon VM Backup](/dodying/software-for-softwareUpdateManager/blob/master/software/Paragon/Paragon%20VM%20Backup.js)[Pixia](/dodying/software-for-softwareUpdateManager/blob/master/software/Pixia.js)[Preme](/dodying/software-for-softwareUpdateManager/blob/master/software/Preme.js)[Python](/dodying/software-for-softwareUpdateManager/blob/master/software/Python.js)[Python2](/dodying/software-for-softwareUpdateManager/blob/master/software/Python2.js)[QTTabBar](/dodying/software-for-softwareUpdateManager/blob/master/software/QTTabBar.js)[Saleen/FilePro](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/FilePro.js)[Saleen/Folder Sync](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Folder%20Sync.js)[Saleen/KeyboardExt](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/KeyboardExt.js)[Saleen/ScanFs](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/ScanFs.js)[Saleen/Tasks Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Tasks%20Manager.js)[Saleen/Video Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Video%20Manager.js)[Saleen/WebDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/WebDownloader.js)3. [shadowsocks-qt5](/dodying/software-for-softwareUpdateManager/blob/master/software/shadowsocks-qt5.js)
+[SmartGit](/dodying/software-for-softwareUpdateManager/blob/master/software/SmartGit.js)[SoftEtherVPN](/dodying/software-for-softwareUpdateManager/blob/master/software/SoftEtherVPN.js)[Stardock/Start8](/dodying/software-for-softwareUpdateManager/blob/master/software/Stardock/Start8.js)[Trillian](/dodying/software-for-softwareUpdateManager/blob/master/software/Trillian.js)[TVDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/TVDownloader.js)[Twitch](/dodying/software-for-softwareUpdateManager/blob/master/software/Twitch.js)4. [Universal Extractor mod by koros aka ya158](/dodying/software-for-softwareUpdateManager/blob/master/software/Universal%20Extractor%20mod%20by%20koros%20aka%20ya158.js)
+[uTorrent](/dodying/software-for-softwareUpdateManager/blob/master/software/uTorrent.js)[VirtualBox](/dodying/software-for-softwareUpdateManager/blob/master/software/VirtualBox.js)[VSO Software/Free Media Player](/dodying/software-for-softwareUpdateManager/blob/master/software/VSO%20Software/Free%20Media%20Player.js)[Vuze](/dodying/software-for-softwareUpdateManager/blob/master/software/Vuze.js)[Weasel](/dodying/software-for-softwareUpdateManager/blob/master/software/Weasel.js)[WinCDEmu](/dodying/software-for-softwareUpdateManager/blob/master/software/WinCDEmu.js)5. [天若OCR](/dodying/software-for-softwareUpdateManager/blob/master/software/%E5%A4%A9%E8%8B%A5OCR.js)
 
 
 ##### Without Installer
 ###### 缺少安装方式
 
-1. [Ad Muncher](software/Ad%20Muncher.js)
-2. [avidemux](software/avidemux.js)
-3. [Balabolka](software/Balabolka.js)
-4. [BinaryMark/Advanced File Finder](software/BinaryMark/Advanced%20File%20Finder.js)
-5. [BinaryMark/All the Best YouTube Downloader](software/BinaryMark/All%20the%20Best%20YouTube%20Downloader.js)
-6. [BinaryMark/Batch Docs](software/BinaryMark/Batch%20Docs.js)
-7. [BinaryMark/Batch Encoding Converter](software/BinaryMark/Batch%20Encoding%20Converter.js)
-8. [BinaryMark/Batch File Encrypt](software/BinaryMark/Batch%20File%20Encrypt.js)
-9. [BinaryMark/Batch File Manager](software/BinaryMark/Batch%20File%20Manager.js)
-10. [BinaryMark/Batch File Rename](software/BinaryMark/Batch%20File%20Rename.js)
-11. [BinaryMark/Batch File Replace](software/BinaryMark/Batch%20File%20Replace.js)
-12. [BinaryMark/Batch File Split & Join](software/BinaryMark/Batch%20File%20Split%20&%20Join.js)
-13. [BinaryMark/Batch Files](software/BinaryMark/Batch%20Files.js)
-14. [BinaryMark/Batch Hex Editor](software/BinaryMark/Batch%20Hex%20Editor.js)
-15. [BinaryMark/Batch Image Converter](software/BinaryMark/Batch%20Image%20Converter.js)
-16. [BinaryMark/Batch Image Enhancer](software/BinaryMark/Batch%20Image%20Enhancer.js)
-17. [BinaryMark/Batch Image Resizer](software/BinaryMark/Batch%20Image%20Resizer.js)
-18. [BinaryMark/Batch Image Splitter](software/BinaryMark/Batch%20Image%20Splitter.js)
-19. [BinaryMark/Batch Image Watermarker](software/BinaryMark/Batch%20Image%20Watermarker.js)
-20. [BinaryMark/Batch Images](software/BinaryMark/Batch%20Images.js)
-21. [BinaryMark/Batch Photo Face](software/BinaryMark/Batch%20Photo%20Face.js)
-22. [BinaryMark/Batch RegEx](software/BinaryMark/Batch%20RegEx.js)
-23. [BinaryMark/Batch Text File Editor](software/BinaryMark/Batch%20Text%20File%20Editor.js)
-24. [BinaryMark/Batch Word Replace](software/BinaryMark/Batch%20Word%20Replace.js)
-25. [BinaryMark/Biorhythms Calculator 2018](software/BinaryMark/Biorhythms%20Calculator%202018.js)
-26. [BinaryMark/Blogspot & Tumblr Image Downloader](software/BinaryMark/Blogspot%20&%20Tumblr%20Image%20Downloader.js)
-27. [BinaryMark/Color Picker Pro](software/BinaryMark/Color%20Picker%20Pro.js)
-28. [BinaryMark/Database E-Mailer](software/BinaryMark/Database%20E-Mailer.js)
-29. [BinaryMark/File Hash Generator](software/BinaryMark/File%20Hash%20Generator.js)
-30. [BinaryMark/Password Generator](software/BinaryMark/Password%20Generator.js)
-31. [BinaryMark/Random Item Picker](software/BinaryMark/Random%20Item%20Picker.js)
-32. [BinaryMark/Random Number Generator](software/BinaryMark/Random%20Number%20Generator.js)
-33. [BinaryMark/Streaming Video Downloader](software/BinaryMark/Streaming%20Video%20Downloader.js)
-34. [BinaryMark/Text to MP3 Converter](software/BinaryMark/Text%20to%20MP3%20Converter.js)
-35. [Blue Iris](software/Blue%20Iris.js)
-36. [cFos Software/cFos Broadband Connect](software/cFos%20Software/cFos%20Broadband%20Connect.js)
-37. [cFos Software/cFos IPv6 Link](software/cFos%20Software/cFos%20IPv6%20Link.js)
-38. [cFos Software/cFos Outlook DAV](software/cFos%20Software/cFos%20Outlook%20DAV.js)
-39. [cFos Software/cFos Personal Net](software/cFos%20Software/cFos%20Personal%20Net.js)
-40. [cFos Software/cFos](software/cFos%20Software/cFos.js)
-41. [cFos Software/cFosSpeed](software/cFos%20Software/cFosSpeed.js)
-42. [ChemTable/Autorun Organizer](software/ChemTable/Autorun%20Organizer.js)
-43. [ChemTable/Registry Life](software/ChemTable/Registry%20Life.js)
-44. [ChemTable/Soft Organizer](software/ChemTable/Soft%20Organizer.js)
-45. [Classic Shell](software/Classic%20Shell.js)
-46. [Cloudevo](software/Cloudevo.js)
-47. [Clover](software/Clover.js)
-48. [CuteFTP](software/CuteFTP.js)
-49. [EasyDrv](software/EasyDrv.js)
-50. [fman](software/fman.js)
-51. [FreeFileSync](software/FreeFileSync.js)
-52. [OpalCalc](software/OpalCalc.js)
-53. [Paragon/Paragon Disk Wiper Professional](software/Paragon/Paragon%20Disk%20Wiper%20Professional.js)
-54. [Paragon/Paragon VM Backup](software/Paragon/Paragon%20VM%20Backup.js)
-55. [Pixia](software/Pixia.js)
-56. [Preme](software/Preme.js)
-57. [QTTabBar](software/QTTabBar.js)
-58. [Saleen/FilePro](software/Saleen/FilePro.js)
-59. [Saleen/Folder Sync](software/Saleen/Folder%20Sync.js)
-60. [Saleen/KeyboardExt](software/Saleen/KeyboardExt.js)
-61. [Saleen/ScanFs](software/Saleen/ScanFs.js)
-62. [Saleen/Tasks Manager](software/Saleen/Tasks%20Manager.js)
-63. [Saleen/Video Manager](software/Saleen/Video%20Manager.js)
-64. [Saleen/WebDownloader](software/Saleen/WebDownloader.js)
-65. [SoftEtherVPN](software/SoftEtherVPN.js)
-66. [Stardock/Start8](software/Stardock/Start8.js)
-67. [Trillian](software/Trillian.js)
-68. [TVDownloader](software/TVDownloader.js)
-69. [Twitch](software/Twitch.js)
-70. [VSO Software/Free Media Player](software/VSO%20Software/Free%20Media%20Player.js)
-71. [Vuze](software/Vuze.js)
-72. [WinCDEmu](software/WinCDEmu.js)
+1. 
+2. 
+3. 
+4. 
+5. 
+6. 
+7. 
+8. 
+9. 
+10. 
+11. 
+12. 
+13. 
+14. 
+15. 
+16. 
+17. 
+18. 
+19. 
+20. 
+21. 
+22. 
+23. 
+24. 
+25. 
+26. 
+27. 
+28. 
+29. 
+30. 
+31. 
+32. 
+33. 
+34. 
+35. 
+36. 
+37. 
+38. 
+39. 
+40. 
+41. 
+42. 
+43. 
+44. 
+45. 
+46. 
+47. 
+48. 
+49. 
+50. 
+51. 
+52. 
+53. 
+54. 
+55. 
+56. 
+57. 
+58. 
+59. 
+60. 
+61. 
+62. 
+63. 
+64. 
+65. 
+66. 
+67. 
+68. 
+69. 
+70. 
+71. 
+72. 
 
