@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1159
+// @Version:            1.1.1162
 // @Author:             dodying
-// @Date:               2019-5-22 13:58:02
+// @Date:               2019-5-23 11:14:25
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -297,7 +297,7 @@ if (args.length) {
                 let matched = res.body.replace(/[\r\n]+/g, '').match(/<h4 class="utilsubject">Description<\/h4>(.*?)<p>/)
                 description = matched ? matched[1] : ''
               } else if (uri.match(/abelssoft.de/)) {
-                description = description.replace(/✓.*/, '')
+                description = description.replace(/(✓|✔).*/, '')
               }
               database[name] = description.replace(/[\r\n]+/, ' ').trim()
             } else {
@@ -311,17 +311,17 @@ if (args.length) {
 
           if (!info.download && !info.site) {
             softwareWithoutDownload += `${orderForWithoutDownload + 1}. `
-            softwareWithoutDownload += `[${name}](software/${src})`
+            softwareWithoutDownload += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareWithoutDownload += '\n'
             orderForWithoutDownload++
           } else if (!info.install) {
             softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
-            softwareWithoutInstaller += `[${name}](software/${src})`
+            softwareWithoutDownload += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareWithoutInstaller += '\n'
             orderForWithoutInstaller++
           } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
             softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
-            softwareSpecialInstaller += `[${name}](software/${src})`
+            softwareWithoutDownload += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareSpecialInstaller += '\n'
             orderForSpecialInstaller++
           }
