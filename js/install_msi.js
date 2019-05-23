@@ -7,35 +7,52 @@
  * @param {string} to A path to the bin file.
  * @param {(string | array)} excludes what files you don't want to install
  * @param {string} preferPath
+ * @param {(string | array)} msiParams
  */
 
-let install = (from, to, excludes = [], preferPath) => {
-  excludes = [].concat(excludes, '.msi$')
-
-  const fse = require('fs-extra')
-  const path = require('path')
-
+let install = async (from, to, excludes = [], preferPath, msiParams) => {
   let install = () => {
+    const fse = require('fs-extra')
+    const path = require('path')
+    const replace = require('./replaceWithDict')
+
     let { dir: parentPath, name } = path.parse(to)
 
-    require('child_process').execSync(`start /wait msiexec /a "${from}" /passive /qr /norestart TARGETDIR="${path.parse(__dirname).dir}\\unzip\\${name}\\"`)
+    excludes = [].concat(excludes, '.msi$')
+    msiParams = [].concat(msiParams).filter(i => i).map(i => replace(i, { dir: parentPath }))
+
+    require('child_process').execSync(`start /wait msiexec /a "${from}" /passive /qr /norestart TARGETDIR="${path.parse(__dirname).dir}\\unzip\\${name}" ${msiParams.join(' ')}`)
 
     let list = require('./walk')(`unzip\\${name}`)
     let pathSplit, rootPath
     if (preferPath) {
-      pathSplit = preferPath.split('/')
-      rootPath = list.filter(i => path.parse(i).base.toLocaleLowerCase() === pathSplit[0].toLocaleLowerCase())[0]
+      pathSplit = preferPath.split(/[/\\]+/)
+      rootPath = list.filter(i => {
+        return path.basename(i).toLowerCase() === pathSplit[pathSplit.length - 1].toLowerCase()
+      }).filter(i => {
+        let _path = i.split(/[/\\]+/)
+        if (_path.length < pathSplit.length) return false
+        for (let i = 1; i <= pathSplit.length; i++) {
+          let a = pathSplit[pathSplit.length - i].toLowerCase()
+          let b = _path[_path.length - i].toLowerCase()
+          if (a !== b) return false
+        }
+        return true
+      })
+      if (rootPath.length) {
+        rootPath = rootPath[0]
+      } else {
+        return false
+      }
     } else {
       rootPath = list.find(i => fse.statSync(i).isFile() && path.dirname(path.relative(`unzip\\${name}`, i)) === '.')
       pathSplit = path.relative(`unzip\\${name}`, rootPath).split('/')
     }
 
-    for (let i = 1; i < pathSplit.length; i++) {
+    for (let i = 0; i < pathSplit.length; i++) {
       rootPath = path.parse(rootPath).dir
-      parentPath = path.parse(parentPath).dir
+      if (i !== 0) parentPath = path.parse(parentPath).dir
     }
-
-    if (fse.statSync(rootPath).isFile()) rootPath = path.parse(rootPath).dir
 
     require('./copy')(rootPath, parentPath, excludes)
     return true
