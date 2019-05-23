@@ -1,12 +1,12 @@
 'use strict'
 
 let data = {
-  url: 'https://zh.vessoft.com/software/windows/download/minecraft',
+  url: 'http://www.snapfiles.com/downloads/virtualdvd/dlvirtualdvd.html',
   version: {
-    selector: '.dd'
+    selector: '.main-dlink'
   },
   download: {
-    selector: '#js_download_link'
+    selector: '.main-dlink'
   },
   install: function (output, iPath, fns) {
     return fns.install(output, iPath)

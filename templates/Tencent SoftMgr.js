@@ -1,12 +1,13 @@
 'use strict'
 
 let data = {
-  url: 'https://zh.vessoft.com/software/windows/download/minecraft',
+  url: 'https://pc.qq.com/detail/1/detail_23761.html',
   version: {
-    selector: '.dd'
+    selector: '.detail-other>li:nth-child(3)',
+    match: /版本：(.*)/
   },
   download: {
-    selector: '#js_download_link'
+    selector: '.detail-install-normal'
   },
   install: function (output, iPath, fns) {
     return fns.install(output, iPath)

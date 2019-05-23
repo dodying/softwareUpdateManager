@@ -9,8 +9,8 @@ let data = {
     selector: 'a[href*="win-64bit"][href$=".zip"]:has(small.text-gray)',
     attr: 'href'
   },
-  install: function (output, iPath) {
-    return require('./../js/install')(output, iPath, null, '*\\aria2c.exe')
+  install: function (output, iPath, fns) {
+    return fns.install(output, iPath, null, '*\\aria2c.exe')
   }
 }
 module.exports = data

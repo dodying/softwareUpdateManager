@@ -7,11 +7,10 @@ let data = {
     match: /(.*)/
   },
   download: {
-    selector: '.data.download',
-    output: '.zip'
+    selector: '.data.download'
   },
-  install: async function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+  install: async function (output, iPath, fns) {
+    return fns.install(output, iPath)
   }
 }
 module.exports = data

@@ -7,11 +7,10 @@ let data = {
     match: /(.*)/
   },
   download: {
-    selector: '[name="trackingConfig[download][internalDownloadUrl]"]',
-    attr: 'content'
+    func: async (res, $) => res.body.match(/"internalDownloadUrl":"(.*?)"/)[1]
   },
-  install: async function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+  install: async function (output, iPath, fns) {
+    return fns.install(output, iPath)
   }
 }
 module.exports = data

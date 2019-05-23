@@ -1,16 +1,21 @@
 'use strict'
 
 let data = {
-  url: 'https://sourceforge.net/projects/docfetcher/files',
+  withoutHeader: true,
+  url: 'https://sourceforge.net/projects/docfetcher/files/docfetcher/',
   version: {
-    selector: 'a.download .sub-label'
+    selector: '[headers="files_name_h"]>a'
   },
   download: {
-    plain: 'https://sourceforge.net/projects/docfetcher/files/latest/download',
-    output: '.exe'
+    func: async (res, $, fns, choice) => fns.walkLink(res, fns, {
+      selector: '[headers="files_name_h"]>a'
+    }, {
+      selector: '[headers="files_name_h"]>a[href$="/download"]',
+      matchCheck: 'portable.zip'
+    })
   },
-  install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+  install: function (output, iPath, fns) {
+    return fns.install(output, iPath)
   }
 }
 module.exports = data

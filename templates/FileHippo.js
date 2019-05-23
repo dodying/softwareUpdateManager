@@ -8,14 +8,16 @@ let data = {
   },
   download: {
     func: async (res, $, fns) => {
-      let res1 = await fns.req($('.download-button').eq(0).attr('href'))
+      let uri1 = $('.download-button').eq(0).attr('href')
+      let res1 = await fns.req(uri1)
       let $1 = fns.cheerio.load(res1.body)
-      return $1('#download-link').attr('href')
-    },
-    output: '.zip'
+      let uri2 = $1('#download-link').attr('href')
+      let res2 = await fns.reqHEAD(uri2)
+      return res2.request.uri.href
+    }
   },
-  install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+  install: function (output, iPath, fns) {
+    return fns.install(output, iPath)
   }
 }
 module.exports = data

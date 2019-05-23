@@ -6,11 +6,10 @@ let data = {
     selector: 'h1'
   },
   download: {
-    selector: '.btn_dld_2',
-    output: '.exe'
+    selector: '.btn_dld_2'
   },
-  install: function (output, iPath) {
-    return require('./../js/install')(output, iPath)
+  install: function (output, iPath, fns) {
+    return fns.install(output, iPath)
   }
 }
 module.exports = data
