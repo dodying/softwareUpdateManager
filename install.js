@@ -1,19 +1,20 @@
 // ==Headers==
 // @Name:               install
 // @Description:        install
-// @Version:            1.0.35
+// @Version:            1.0.44
 // @Author:             dodying
-// @Date:               2019-2-17 18:04:39
+// @Date:               2019-3-27 17:07:04
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
-// @Require:
+// @Require:            fs-extra,readline-sync
 // ==/Headers==
 
 // 导入原生模块
-const fse = require('fs-extra')
 const path = require('path')
 
 // 导入第三方模块
+const fse = require('fs-extra')
+const readlineSync = require('readline-sync')
 
 // Function
 
@@ -25,7 +26,7 @@ const main = async () => {
     let fullpath = path.resolve(process.cwd(), file)
 
     if (!fse.existsSync(fullpath)) continue
-
+    console.log(fullpath)
     fse.emptyDirSync('./unzip')
 
     let { dir, name } = path.parse(fullpath)
@@ -41,11 +42,13 @@ const main = async () => {
 
     fse.emptyDirSync('./unzip')
   }
+  readlineSync.keyInPause('Press any key to exit')
 }
 
 main().then(async () => {
   //
 }, async err => {
   console.error(err)
+  readlineSync.keyInPause('Press any key to exit')
   process.exit()
 })
