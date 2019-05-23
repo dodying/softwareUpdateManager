@@ -11,6 +11,8 @@
     - [TODO](#todo)
     - [Software Example](#software-example)
       - [软件示例](#软件示例)
+    - [Supported Search Site](#supported-search-site)
+      - [支持的搜索站点](#支持的搜索站点)
     - [Supported Software](#supported-software)
       - [支持的软件](#支持的软件)
     - [Special Software](#special-software)
@@ -18,11 +20,9 @@
         - [Special Installer](#special-installer)
           - [特殊的安装方式(作为参考)](#特殊的安装方式作为参考)
         - [Without Download](#without-download)
-          - [缺失下载](#缺失下载)
+          - [缺少下载地址](#缺少下载地址)
         - [Without Installer](#without-installer)
-          - [缺失安装方式](#缺失安装方式)
-        - [Extractable Software](#extractable-software)
-          - [可以解包的软件](#可以解包的软件)
+          - [缺少安装方式](#缺少安装方式)
 
 <!-- /TOC -->
 
@@ -56,8 +56,8 @@
 * `--makemd`
 * `--search keyword`
 * `[--profile name] --list`
-* `[--quiet] [--profile name] [--filter name] [ --test | --onlycheck | --backup | --install ]`
-* `[--quiet] [--profile name] [ --test | --onlycheck | --backup | --install ] [name]`
+* `[--quiet] [--profile name] [--filter name] [ --test | --test-download | --test-install | --check | --backup | --install ]`
+* `[--quiet] [--profile name] [ --test | --test-download | --test-install | --check | --backup | --install ] [name]`
 
 <details>
   <summary>Command-Line Details</summary>
@@ -98,9 +98,17 @@
 
     `node index.js --test`
     获取网上所有软件的最新版本号 (忽略更新间隔)
-* `--onlycheck`, `-oc`
+* `--test-download`, `-td`
 
-    `node index.js --onlycheck`
+    `node index.js --test-download`
+    获取网上所有软件的最新版本号，并下载 (使用 profile test)
+* `--test-download`, `-ti`
+
+    `node index.js --test-install`
+    获取网上所有软件的最新版本号，并下载安装 (使用 profile test)
+* `--check`, `-c`
+
+    `node index.js --check`
     获取网上软件的最新版本号，并写入`database.json` (忽略更新间隔)
     效果: 忽略本地版本
 * `--backup`, `-b`
@@ -117,11 +125,14 @@
     检查并更新这些软件(多个软件用`空格`相隔) (忽略更新间隔)
 </details>
 
+
 ### TODO
 
 * [x] 支持同一软件的不同版本
 * [x] 从 [FileHorse.com](http://www.filehorse.com/) 等网站搜索并生成相应js
 * [x] 自动检查安装包类型并安装
+* [ ] Request模式下，检查文件是否完整
+
 
 ### Software Example
 #### 软件示例
@@ -134,6 +145,12 @@
 {example}
 ```
 </details>
+
+
+### Supported Search Site
+#### 支持的搜索站点
+
+{search}
 
 
 ### Supported Software
@@ -154,19 +171,11 @@
 {software-special-installer}
 
 ##### Without Download
-###### 缺失下载
+###### 缺少下载地址
 
 {software-without-download}
 
 ##### Without Installer
-###### 缺失安装方式
+###### 缺少安装方式
 
 {software-without-installer}
-
-##### Extractable Software
-###### 可以解包的软件
-
-1. 以下软件的安装包使用 [Advanced Installer](https://www.advancedinstaller.com/) 打包
-  可以使用参数 `/extract <path>` 来提取，查看[更多信息](https://www.advancedinstaller.com/user-guide/exe-setup-file.html)
-
-    `RaiDrive`

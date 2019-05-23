@@ -1,14 +1,16 @@
 *.bat
+*.log
 archive
 config.js
 cookies.json
 cookies.txt
 database-*.json
 database.json
+debug
 generate
 html
 node_modules
 plugins
-software
 software.json
+software*
 unzip
