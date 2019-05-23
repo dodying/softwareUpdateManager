@@ -4,19 +4,20 @@ let config = {
   debug: false,
   locale: 'zh-CN', // 决定时间格式
   ignoreWarn: { // 无视警告
-    mode1: false,
-    mode3: false,
-    preferPath: false,
-    install: false,
-    withoutVirusScan: false
+    mode1: false, // 模式 1: 下载但不安装
+    mode3: false, // 模式 3: 删除原版本（包括配置）后安装新版本
+    preferPath: false, // preferPath与目标路径不匹配
+    install: false, // 与手动安装相似(可能会生成快捷方式和写入注册表，甚至是捆绑文件或病毒)
+    withoutVirusScan: false, // 安装文件未扫描
+    fixedPath: false // 目标路径无法改变
   },
   profile: {
     example: {
       deepmerge: true // 是否深度合并，是则只替换相同key的值，否则直接替换对象
     }
   },
-  mode: 2, // 模式(对于免费软件) 0:只检查有无新版本 1.下载新版本安装包后不自动安装 2.下载并自动安装新版本 3.删除原版本（包括配置），并安装新版本
-  commercialMode: 0, // 对于商业软件 0:只检查有无新版本 1.下载新版本安装包后不自动安装 2.下载并自动安装新版本 3.删除原版本（包括配置），并安装新版本
+  mode: 2, // 模式(对于免费软件) 0:只检查有无新版本 1.下载新版本安装包后不自动安装 2.下载并自动安装新版本 3.删除原版本（包括配置）后并安装新版本
+  commercialMode: 0, // 对于商业软件 0:只检查有无新版本 1.下载新版本安装包后不自动安装 2.下载并自动安装新版本 3.删除原版本（包括配置）后并安装新版本
   freePersion: true, // 是否将 Free Personal 类型的软件是为商业软件
   freemium: true, // 是否将 Freemium 类型的软件是为商业软件
   virus: { // 检查病毒
@@ -32,18 +33,27 @@ let config = {
   archivePath: 'archive',
   rootPath: 'path/to/root/path', // 根路径
   checkInterval: 1, // 检测更新的间隔(单位天)
-  userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36',
   urlWithProxy: [ // 请求与下载的链接如果匹配任一，则走代理
   ],
   urlWithoutProxy: [ // 请求与下载的链接如果匹配任一，则不走代理(最优先)
   ],
+  autoToggleProxy: true, // 是否自动切换代理状态
   request: {
+    userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36',
     retry: 5, // 重试次数(0表示不重试)
     timeout: 60, // 请求超时(单位秒)
     proxy: 'protocol://username:password@hostname:port' // 代理，留空则不使用代理 protocol: socks5/http
   },
   download: { // 下载相关
-    method: 'request', // request(无需下载，但不支持续传) 或 aria2c(支持多进程) 或 wget 或 curl(支持socks代理)
+    /**
+     * method:
+     *   request: (不推荐)无需下载，但bug众多，使用时continue推荐为false(即续传可能会出错)
+     *   aria2c: 支持多进程
+     *   wget
+     *   curl: 支持socks代理
+     */
+    userAgent: null,
+    method: 'request',
     quiet: false, // 不显示进度
     continue: true, // 是否断点续传
     retry: 5, // 重试次数(0表示无数次)
@@ -64,7 +74,7 @@ let config = {
     /^uninstall.exe/i // 相对于软件根路径
   ],
   search: [ // 留空则搜索全部网站，否则只按以下顺序搜索
-    'softpedia'
+    'Softpedia'
   ],
   software: { // 要启用更新的软件
     '7-Zip': '7-Zip/7z.exe', // 路径(相对于rootPath，可使用绝对路径)
