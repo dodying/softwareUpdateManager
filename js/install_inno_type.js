@@ -10,7 +10,7 @@
  * @param {object} toDirUserDefined
  */
 
-let install = (from, to, excludes = undefined, preserveType = undefined, toDirUserDefined = {}) => {
+let install = async (from, to, excludes = undefined, preserveType = undefined, toDirUserDefined = {}) => {
   const path = require('path')
   const fse = require('fs-extra')
 
@@ -35,10 +35,13 @@ let install = (from, to, excludes = undefined, preserveType = undefined, toDirUs
       } else if (typeof preserveType === 'object') {
         preferType = preserveType[name] || preserveType['default']
       }
+      let base = `${name},${type}${ext}`
       if (type === preferType) {
         fse.renameSync(i, path.join(dir, name + ext))
+        console.log(`Rename:\t${base} ==> ${name + ext}`)
       } else {
         fse.unlinkSync(i)
+        console.log(`Delete:\t${base}`)
       }
     }
 

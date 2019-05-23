@@ -9,10 +9,11 @@
  * @param {object} toDirUserDefined
  */
 
-let install = (from, to, excludes = undefined, toDirUserDefined = {}) => {
+let install = async (from, to, excludes = undefined, toDirUserDefined = {}) => {
   const fse = require('fs-extra')
   const path = require('path')
   const cp = require('child_process')
+  const replace = require('./replaceWithDict')
 
   try {
     cp.execSync(`plugins\\innounp.exe -t "${from}"`)
@@ -98,13 +99,12 @@ let install = (from, to, excludes = undefined, toDirUserDefined = {}) => {
         let topath = toDir[i]
         if (topath) toEval.push(i)
       } else {
-        console.error(`Error:\tNot defined dir\nDir:\t${i}`)
-        return false
+        console.warn(`Warn:\tNot defined dir "${i}"`)
       }
     }
 
     for (let i of toEval) {
-      require('./copy')(`unzip\\${name}\\${i}`, toDir[i], excludes)
+      require('./copy')(`unzip\\${name}\\${i}`, replace(toDir[i], { dir: parentPath }), excludes)
     }
     return true
   }

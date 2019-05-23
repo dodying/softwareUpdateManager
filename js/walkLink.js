@@ -1,16 +1,20 @@
 'use strict'
 
 let compare = (a, b) => { // a大于b，返回-1(前移)；等于，返回0；小于，返回1(后移)
-  a = String(a).split(/[^\da-z]/i)
-  b = String(b).split(/[^\da-z]/i)
+  a = String(a).trim().split(/[^\da-z]/i)
+  b = String(b).trim().split(/[^\da-z]/i)
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
     if (a[i] === b[i]) continue
-    if ((a[i].match(/^\d+$/) && b[i].match(/^\d+$/))) { // 都是数字或字母
+    if (a[i].match(/^\d+$/) && b[i].match(/^\d+$/)) { // 都是数字或字母
       return +a[i] > +b[i] ? -1 : 1
-    } else if ((a[i].match(/^[a-z]+$/i) && b[i].match(/^[a-z]+$/i))) { // 都是或字母
+    } else if (a[i].match(/^[a-z]+$/i) && b[i].match(/^[a-z]+$/i)) { // 都是或字母
       return a[i] > b[i] ? -1 : 1
     } else if (a[i].match(/^\d+$/) || b[i].match(/^\d+$/)) { // 一方是数字则一方大
       return a[i].match(/^\d+$/) ? -1 : 1
+    } else if (a[i].match(/\d+/) && b[i].match(/\d+/)) { // 都包含数字
+      return +a[i].match(/\d+/) > +b[i].match(/\d+/) ? -1 : 1
+    } else if (a[i].match(/\d+/) || b[i].match(/\d+/)) { // 一方包含数字
+      return a[i].match(/\d+/) ? -1 : 1
     }
   }
   return a.length > b.length ? -1 : a.length === b.length ? 0 : 1
@@ -23,12 +27,20 @@ let compare = (a, b) => { // a大于b，返回-1(前移)；等于，返回0；�
  */
 
 let walkLink = async (link, fns, ...selectors) => {
-  let uri = [link]
+  let uri = []
   let res = []
   let order = []
+  if (link instanceof require('http').IncomingMessage) {
+    res.push(link)
+  } else if (typeof link === 'string') {
+    link.push(link)
+  } else {
+    console.error('Error:\tNo Link Given')
+    return false
+  }
 
   for (let i = 0; i < selectors.length;) {
-    if (!res[i] || res[i].request.uri.href !== uri[i]) res[i] = await fns.req(uri[i])
+    if (uri[i] && (!res[i] || res[i].request.uri.href !== uri[i])) res[i] = await fns.req(uri[i])
     let $ = fns.cheerio.load(res[i].body)
     if (!order[i]) order[i] = 0
 

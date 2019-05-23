@@ -10,7 +10,7 @@
  * @param {string} args other args for js
  */
 
-let install = (from, to, js, filter = undefined, ...args) => {
+let install = async (from, to, js, filter = undefined, ...args) => {
   const path = require('path')
   const fse = require('fs-extra')
   const cp = require('child_process')
@@ -18,6 +18,7 @@ let install = (from, to, js, filter = undefined, ...args) => {
   try {
     cp.execSync(`plugins\\7z.exe t "${from}"`)
   } catch (error) {
+    fse.writeFileSync('error', error.output)
     fse.unlinkSync(from)
     console.error(`Output:\t${from}\nError:\tFile Error`)
     return false
@@ -28,14 +29,17 @@ let install = (from, to, js, filter = undefined, ...args) => {
 
   list = list.filter(i => fse.statSync(path.resolve('./unzip', i)).isFile())
   let fromNew = filter ? list.filter(i => i.match(filter))[0] : list[0]
-  if (!fromNew) return false
+  if (!fromNew) {
+    console.error(`Output:\t${from}\nError:\tCan't Find ${filter}`)
+    return false
+  }
   fromNew = path.resolve('./unzip', fromNew)
 
   let installed
   if (typeof js === 'string' && require('./' + js)) {
-    installed = require('./' + js)(fromNew, to, ...args)
+    installed = await require('./' + js)(fromNew, to, ...args)
   } else if (typeof js === 'function') {
-    installed = js(fromNew, to)
+    installed = await js(fromNew, to)
   }
 
   return installed

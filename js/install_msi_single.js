@@ -8,7 +8,7 @@
  * @param {string} preferPath
  */
 
-let install = (from, to, preferPath) => {
+let install = async (from, to, preferPath) => {
   const path = require('path')
 
   let tmpNumber = Math.random().toString()

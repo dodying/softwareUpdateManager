@@ -8,7 +8,7 @@
  * @param {(string | array)} excludes what files you don't want to install
  */
 
-let install = (from, to, excludes = undefined) => {
+let install = async (from, to, excludes = undefined) => {
   const fse = require('fs-extra')
   const path = require('path')
   const cp = require('child_process')
@@ -51,44 +51,47 @@ let install = (from, to, excludes = undefined) => {
         /* eslint-disable no-control-regex */
         content = content.replace(/\u0000/g, '')
         if (content.match('Advanced Installer')) {
+          console.log('Advanced Installer')
           return require('./install_ai')(from, to, excludes)
         } else {
           return false
         }
-      } else if (files.filter(i => i.name === 'DATA').length) {
-        cp.execSync(`plugins\\7z.exe e -y -o"unzip\\" "${from}" "DATA"`)
-        let content = fse.readFileSync('./unzip/DATA', 'utf-8')
-        if (content.match('Inno Setup')) {
-          let list
-          try {
-            list = cp.execSync(`plugins\\innounp.exe -t "${from}"`, { encoding: 'utf8' })
-          } catch (error) {
-            return false
-          }
-          list = list.split(/[\r\n]/).filter(i => i.match(/^#\d+\s+(.*)$/)).map(i => i.match(/^#\d+\s+(.*)$/)[1])
-          if (list.filter(i => path.parse(i).name.match(/,\d+$/)).length) {
-            return require('./install_inno_with_type')(from, to, excludes)
-          } else {
-            return require('./install_inno')(from, to, excludes)
-          }
+      } else {
+        let list
+        try {
+          list = cp.execSync(`plugins\\innounp.exe -t "${from}"`, { encoding: 'utf8' })
+        } catch (error) {
+          return false
+        }
+        list = list.split(/[\r\n]/).filter(i => i.match(/^#\d+\s+(.*)$/)).map(i => i.match(/^#\d+\s+(.*)$/)[1])
+        if (list.filter(i => path.parse(i).name.match(/,\d+$/)).length) {
+          console.log('Inno Setup With Types')
+          return require('./install_inno_type')(from, to, excludes)
+        } else {
+          console.log('Inno Setup')
+          return require('./install_inno')(from, to, excludes)
         }
       }
       // binaries
     } else if (files.filter(i => i.name === '!File').length) {
+      console.log('MSI')
       return require('./install_msi')(from, to, excludes)
     } else if (files.filter(i => i.name.match(/app-64\.7z$/i)).length) {
+      console.log('app-64')
       return require('./install_zipped')(from, to, 'install', 'app-64.7z')
     } else if (files.filter(i => i.name.match(/app-32\.7z$/i)).length) {
+      console.log('app-32')
       return require('./install_zipped')(from, to, 'install', 'app-32.7z')
     } else if (files.filter(i => i.name.match(/full\.nupkg$/i)).length) {
+      console.log('nupkg')
       return require('./install_zipped')(from, to, 'install', 'full.nupkg', null, 'lib\\net45')
     } else if (files.filter(i => i.name.match(/^u\d*$/i)).length) {
+      console.log('WIX')
       return require('./install_wix')(from, to, excludes)
     } else {
+      console.log('Normal Zip or NSIS')
       return require('./install')(from, to, excludes)
     }
-
-    return true
   } catch (error) {
     console.error(error)
     return false

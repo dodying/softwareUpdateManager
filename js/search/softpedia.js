@@ -6,15 +6,16 @@ let data = {
   site: {
     Softpedia: '{{url}}'
   },
-  install: function (output, iPath) {
-    return require('./../js/install_auto')(output, iPath)
+  install: function (output, iPath, fns) {
+    return fns.install.auto(output, iPath)
   }
 }
 module.exports = data
 `
 
 let search = async (fns, keyword) => {
-  let res = await fns.req('https://www.softpedia.com/_xaja/programfinder.php', {
+  let res = await fns.req({
+    uri: 'https://www.softpedia.com/_xaja/programfinder.php',
     method: 'POST',
     form: {
       f: '0,2,4',
@@ -24,7 +25,7 @@ let search = async (fns, keyword) => {
     },
     json: true
   })
-  return res.body.hasphones ? res.body.phones.sort((a, b) => a.date * 1 >= b.date ? -1 : a.date === b.date ? 0 : 1).map(i => {
+  return res && res.body && res.body.hasphones ? res.body.phones.sort((a, b) => a.date * 1 >= b.date ? -1 : a.date === b.date ? 0 : 1).map(i => {
     return {
       name: i.title,
       image: i.image,

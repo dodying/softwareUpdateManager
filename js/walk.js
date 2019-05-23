@@ -53,7 +53,13 @@ let walk = function (dir, option = {}) {
 
     let fullpath = path.join(dir, file)
     let name = option.fullpath ? fullpath : path.relative(option.dir, fullpath)
-    if (fs.existsSync(fullpath) && fs.statSync(fullpath).isDirectory()) {
+    let isDirectory
+    try {
+      isDirectory = fs.existsSync(fullpath) && fs.statSync(fullpath).isDirectory()
+    } catch (error) { // ignore
+      return
+    }
+    if (isDirectory) {
       let dirname = file // path.dirname(file)
       if (option.ignoreDir.some(i => dirname.match(i))) return
       if (option.matchDir && !option.matchDir.some(i => dirname.match(i))) return

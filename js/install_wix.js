@@ -6,11 +6,12 @@
  * @param {string} from A path to the install pack file.
  * @param {string} to A path to the bin file.
  * @param {(string | array)} excludes what files you don't want to install
- * @param {(string | RegExp)} installMsi what msi you want to install (without .msi) // String: 完全相等, RegExp: 匹配即可
+ * @param {(string | RegExp)} installMsi what msi you want to install (with .msi) // String: 完全相等, RegExp: 匹配即可
  * @param {string} preferPath
+ * @param {(string | array)} msiParams
  */
 
-let install = async (from, to, excludes, installMsi, preferPath) => {
+let install = async (from, to, excludes, installMsi, preferPath, msiParams) => {
   excludes = excludes ? [].concat(excludes) : []
   excludes.push('.msi$')
 
@@ -40,11 +41,12 @@ let install = async (from, to, excludes, installMsi, preferPath) => {
     for (let file of list) {
       let _path = path.resolve('./', fromNew, file)
       if ((typeof installMsi === 'string' && file === installMsi) || (installMsi instanceof RegExp && file.match(installMsi))) {
-        return require('./install_msi')(_path, to, excludes, preferPath)
+        return require('./install_msi')(_path, to, excludes, preferPath, msiParams)
       } else {
         continue
       }
     }
+
     return false
   }
 

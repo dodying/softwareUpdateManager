@@ -5,34 +5,16 @@
  * @returns {boolean} if install completed
  * @param {string} from A path to the install pack file.
  * @param {string} to A path to the bin file.
+ * @param {string[]} args
+ * @param {object} options
+ * @param {function} callback
  */
 
-let install = (from, to) => {
-  if (!require('./../config').ignoreWarn.install && !require('readline-sync').keyInYNStrict('Notice:\tThis is just same as install manually\nContinue to install?')) return false
-
-  const path = require('path')
-
-  let install = () => {
-    let { dir: parentPath } = path.parse(to)
-    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-      parentPath = path.parse(parentPath).dir
-    }
-
-    // http://www.jrsoftware.org/ishelp/topic_setupcmdline.htm
-    require('child_process').execSync(`"${from}" /SP- /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /DIR="${parentPath}"`)
-    return true
-  }
-
-  let killed = require('./kill')(from, to)
-  if (!killed) return false
-
-  try {
-    let installed = install()
-    return installed
-  } catch (error) {
-    console.error(error)
-    return false
-  }
+let install = async (from, to, args = [], options = {}, callback) => {
+  // http://www.jrsoftware.org/ishelp/topic_setupcmdline.htm
+  args = [].concat('/SP-', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS', args, '/DIR="{dir}"')
+  options = Object.assign({ wait: true, shell: true }, options)
+  return require('./install_cli')(from, to, from, args, options, callback)
 }
 
 module.exports = install

@@ -9,13 +9,13 @@
  * @param {string} filterInZip The filter to real install pack in zipped file
  */
 
-let install = (from, to, excludes = undefined, filterInZip = '') => {
+let install = async (from, to, excludes = undefined, filterInZip = '', params = '') => {
   const fse = require('fs-extra')
   const path = require('path')
   const cp = require('child_process')
 
   try {
-    cp.execSync(`plugins\\7z.exe t "${from}"`)
+    cp.execSync(`plugins\\7z.exe t "${from}" ${params || ''}`)
   } catch (error) {
     fse.unlinkSync(from)
     console.error(`Output:\t${from}\nError:\tFile Error`)
@@ -23,12 +23,14 @@ let install = (from, to, excludes = undefined, filterInZip = '') => {
   }
 
   let install = () => {
-    let { dir: parentPath, name } = path.parse(to)
+    let parentPath = path.dirname(to)
     while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
       parentPath = path.parse(parentPath).dir
     }
 
-    cp.execSync(`plugins\\7z.exe x -y -o"unzip\\${name}\\" "${from}" ${filterInZip || ''}`)
+    let name = Math.random().toString().substr(2)
+
+    cp.execSync(`plugins\\7z.exe x -y -o"unzip\\${name}\\" "${from}" ${params || ''} ${filterInZip || ''}`)
     let fromNew = `unzip\\${name}`
     let list = fse.readdirSync(fromNew)
     while (list.length === 1) {

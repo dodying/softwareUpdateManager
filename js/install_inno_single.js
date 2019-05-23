@@ -8,7 +8,7 @@
  * @param {string} filter The filter to path
  */
 
-let install = (from, to, filter = /\.exe$/i) => {
+let install = async (from, to, filter = /\.exe$/i) => {
   const path = require('path')
 
   let tmpNumber = Math.random().toString()

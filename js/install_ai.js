@@ -9,7 +9,7 @@
  * @param {string} filter The filter to path
  */
 
-let install = (from, to, excludes = undefined, filter) => {
+let install = async (from, to, excludes = undefined, filter) => {
   const path = require('path')
   const fse = require('fs-extra')
   const cp = require('child_process')
@@ -23,7 +23,13 @@ let install = (from, to, excludes = undefined, filter) => {
     cp.execSync(`"${from}" /extract:"${path.parse(__dirname).dir}\\unzip\\"`)
 
     let fromNew = fse.readdirSync('unzip')
-    fromNew = path.join('unzip', fromNew[0])
+    let fromNewFilter = fromNew.filter(i => i.match(/^[A-Z0-9]{7}$/))
+    if (fromNewFilter.length) {
+      fromNew = path.join('unzip', fromNewFilter[0])
+    } else {
+      fromNew = 'unzip'
+    }
+
     if (filter) {
       let lst = require('./walk')(fromNew)
       fromNew = lst.filter(i => path.relative(fromNew, i).match(filter))

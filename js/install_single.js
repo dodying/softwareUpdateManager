@@ -7,7 +7,7 @@
  * @param {string} to A path to the bin file.
  */
 
-let install = (from, to) => {
+let install = async (from, to) => {
   let killed = require('./kill_single')(from, to)
   let fs = require('fs-extra')
   if (!killed) return false

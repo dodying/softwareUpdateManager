@@ -6,15 +6,16 @@ let data = {
   site: {
     FileHorse: '{{url}}'
   },
-  install: function (output, iPath) {
-    return require('./../js/install_auto')(output, iPath)
+  install: function (output, iPath, fns) {
+    return fns.install.auto(output, iPath)
   }
 }
 module.exports = data
 `
 
 let search = async (fns, keyword) => {
-  let res = await fns.req('https://www.filehorse.com/search?q=' + keyword)
+  let res = await fns.req('https://www.filehorse.com/search?q=' + encodeURI(keyword))
+  if (!res || !res.body) return []
   let $ = fns.cheerio.load(res.body)
   return $('.software_list>li:not(.ads,.no_match)').map((index, item) => {
     let url = $(item).find('h3>a').attr('href')
