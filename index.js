@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1162
+// @Version:            1.1.1163
 // @Author:             dodying
-// @Date:               2019-5-23 11:14:25
+// @Date:               2019-5-23 11:22:41
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -316,12 +316,12 @@ if (args.length) {
             orderForWithoutDownload++
           } else if (!info.install) {
             softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
-            softwareWithoutDownload += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareWithoutInstaller += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareWithoutInstaller += '\n'
             orderForWithoutInstaller++
           } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
             softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
-            softwareWithoutDownload += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareSpecialInstaller += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareSpecialInstaller += '\n'
             orderForSpecialInstaller++
           }

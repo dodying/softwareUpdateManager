@@ -36,8 +36,8 @@
 
 1. `git clone https://github.com/dodying/softwareUpdateManager`
 2. `npm install`
-3. `git clone https://github.com/dodying/software-for-softwareUpdateManager`
-  并移动 **software** 到 **softwareUpdateManager** 下
+3. 下载 `https://github.com/dodying/software-for-softwareUpdateManager/archive/master.zip`，
+  解压并移动 **software** 到 **softwareUpdateManager** 下
 4. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
 5. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
 
@@ -3013,113 +3013,113 @@ module.exports = data
 ##### Special Installer
 ###### 特殊的安装方式(作为参考)
 
-1. 
-2. 
-3. 
-4. 
-5. 
-6. 
-7. 
-8. 
-9. 
-10. 
-11. 
-12. 
-13. 
-14. 
-15. 
-16. 
-17. 
-18. 
-19. 
-20. 
-21. 
-22. 
+1. [Advanced IP Scanner](/dodying/software-for-softwareUpdateManager/blob/master/software/Advanced%20IP%20Scanner.js)
+2. [AIMP](/dodying/software-for-softwareUpdateManager/blob/master/software/AIMP.js)
+3. [AppleApplicationSupport](/dodying/software-for-softwareUpdateManager/blob/master/software/AppleApplicationSupport.js)
+4. [AutoHotkey](/dodying/software-for-softwareUpdateManager/blob/master/software/AutoHotkey.js)
+5. [Bandisoft Bandizip](/dodying/software-for-softwareUpdateManager/blob/master/software/Bandisoft%20Bandizip.js)
+6. [Bandisoft Honeyview](/dodying/software-for-softwareUpdateManager/blob/master/software/Bandisoft%20Honeyview.js)
+7. [CocosCreator](/dodying/software-for-softwareUpdateManager/blob/master/software/CocosCreator.js)
+8. [Directory Opus](/dodying/software-for-softwareUpdateManager/blob/master/software/Directory%20Opus.js)
+9. [Evernote](/dodying/software-for-softwareUpdateManager/blob/master/software/Evernote.js)
+10. [Fork](/dodying/software-for-softwareUpdateManager/blob/master/software/Fork.js)
+11. [GIMP](/dodying/software-for-softwareUpdateManager/blob/master/software/GIMP.js)
+12. [IObit/Driver Booster](/dodying/software-for-softwareUpdateManager/blob/master/software/IObit/Driver%20Booster.js)
+13. [KingSoft/WPS](/dodying/software-for-softwareUpdateManager/blob/master/software/KingSoft/WPS.js)
+14. [MinGW-w64](/dodying/software-for-softwareUpdateManager/blob/master/software/MinGW-w64.js)
+15. [Mythicsoft/Agent Ransack](/dodying/software-for-softwareUpdateManager/blob/master/software/Mythicsoft/Agent%20Ransack.js)
+16. [Npcap](/dodying/software-for-softwareUpdateManager/blob/master/software/Npcap.js)
+17. [Python](/dodying/software-for-softwareUpdateManager/blob/master/software/Python.js)
+18. [Python2](/dodying/software-for-softwareUpdateManager/blob/master/software/Python2.js)
+19. [SmartGit](/dodying/software-for-softwareUpdateManager/blob/master/software/SmartGit.js)
+20. [uTorrent](/dodying/software-for-softwareUpdateManager/blob/master/software/uTorrent.js)
+21. [VirtualBox](/dodying/software-for-softwareUpdateManager/blob/master/software/VirtualBox.js)
+22. [Weasel](/dodying/software-for-softwareUpdateManager/blob/master/software/Weasel.js)
 
 
 ##### Without Download
 ###### 缺少下载地址
 
-[Ad Muncher](/dodying/software-for-softwareUpdateManager/blob/master/software/Ad%20Muncher.js)[Advanced IP Scanner](/dodying/software-for-softwareUpdateManager/blob/master/software/Advanced%20IP%20Scanner.js)[AIMP](/dodying/software-for-softwareUpdateManager/blob/master/software/AIMP.js)[AppleApplicationSupport](/dodying/software-for-softwareUpdateManager/blob/master/software/AppleApplicationSupport.js)[AutoHotkey](/dodying/software-for-softwareUpdateManager/blob/master/software/AutoHotkey.js)[avidemux](/dodying/software-for-softwareUpdateManager/blob/master/software/avidemux.js)[Balabolka](/dodying/software-for-softwareUpdateManager/blob/master/software/Balabolka.js)[Bandisoft Bandizip](/dodying/software-for-softwareUpdateManager/blob/master/software/Bandisoft%20Bandizip.js)[Bandisoft Honeyview](/dodying/software-for-softwareUpdateManager/blob/master/software/Bandisoft%20Honeyview.js)[BinaryMark/Advanced File Finder](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Advanced%20File%20Finder.js)[BinaryMark/All the Best YouTube Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/All%20the%20Best%20YouTube%20Downloader.js)[BinaryMark/Batch Docs](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Docs.js)[BinaryMark/Batch Encoding Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Encoding%20Converter.js)[BinaryMark/Batch File Encrypt](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Encrypt.js)[BinaryMark/Batch File Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Manager.js)[BinaryMark/Batch File Rename](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Rename.js)[BinaryMark/Batch File Replace](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Replace.js)[BinaryMark/Batch File Split & Join](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Split%20&%20Join.js)[BinaryMark/Batch Files](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Files.js)[BinaryMark/Batch Hex Editor](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Hex%20Editor.js)[BinaryMark/Batch Image Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Converter.js)[BinaryMark/Batch Image Enhancer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Enhancer.js)[BinaryMark/Batch Image Resizer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Resizer.js)[BinaryMark/Batch Image Splitter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Splitter.js)[BinaryMark/Batch Image Watermarker](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Watermarker.js)[BinaryMark/Batch Images](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Images.js)[BinaryMark/Batch Photo Face](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Photo%20Face.js)[BinaryMark/Batch RegEx](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20RegEx.js)[BinaryMark/Batch Text File Editor](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Text%20File%20Editor.js)[BinaryMark/Batch Word Replace](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Word%20Replace.js)[BinaryMark/Biorhythms Calculator 2018](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Biorhythms%20Calculator%202018.js)[BinaryMark/Blogspot & Tumblr Image Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Blogspot%20&%20Tumblr%20Image%20Downloader.js)[BinaryMark/Color Picker Pro](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Color%20Picker%20Pro.js)[BinaryMark/Database E-Mailer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Database%20E-Mailer.js)[BinaryMark/File Hash Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/File%20Hash%20Generator.js)[BinaryMark/Password Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Password%20Generator.js)[BinaryMark/Random Item Picker](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Random%20Item%20Picker.js)[BinaryMark/Random Number Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Random%20Number%20Generator.js)[BinaryMark/Streaming Video Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Streaming%20Video%20Downloader.js)[BinaryMark/Text to MP3 Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Text%20to%20MP3%20Converter.js)[Blue Iris](/dodying/software-for-softwareUpdateManager/blob/master/software/Blue%20Iris.js)[cFos Software/cFos Broadband Connect](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Broadband%20Connect.js)[cFos Software/cFos IPv6 Link](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20IPv6%20Link.js)[cFos Software/cFos Outlook DAV](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Outlook%20DAV.js)[cFos Software/cFos Personal Net](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Personal%20Net.js)[cFos Software/cFos](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos.js)[cFos Software/cFosSpeed](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFosSpeed.js)[ChemTable/Autorun Organizer](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Autorun%20Organizer.js)[ChemTable/Registry Life](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Registry%20Life.js)[ChemTable/Soft Organizer](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Soft%20Organizer.js)[Classic Shell](/dodying/software-for-softwareUpdateManager/blob/master/software/Classic%20Shell.js)[Cloudevo](/dodying/software-for-softwareUpdateManager/blob/master/software/Cloudevo.js)[Clover](/dodying/software-for-softwareUpdateManager/blob/master/software/Clover.js)1. [CnkiDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/CnkiDownloader.js)
-[CocosCreator](/dodying/software-for-softwareUpdateManager/blob/master/software/CocosCreator.js)[CuteFTP](/dodying/software-for-softwareUpdateManager/blob/master/software/CuteFTP.js)[Directory Opus](/dodying/software-for-softwareUpdateManager/blob/master/software/Directory%20Opus.js)[EasyDrv](/dodying/software-for-softwareUpdateManager/blob/master/software/EasyDrv.js)2. [Enigma Virtual Box unpacker](/dodying/software-for-softwareUpdateManager/blob/master/software/Enigma%20Virtual%20Box%20unpacker.js)
-[Evernote](/dodying/software-for-softwareUpdateManager/blob/master/software/Evernote.js)[fman](/dodying/software-for-softwareUpdateManager/blob/master/software/fman.js)[Fork](/dodying/software-for-softwareUpdateManager/blob/master/software/Fork.js)[FreeFileSync](/dodying/software-for-softwareUpdateManager/blob/master/software/FreeFileSync.js)[GIMP](/dodying/software-for-softwareUpdateManager/blob/master/software/GIMP.js)[IObit/Driver Booster](/dodying/software-for-softwareUpdateManager/blob/master/software/IObit/Driver%20Booster.js)[KingSoft/WPS](/dodying/software-for-softwareUpdateManager/blob/master/software/KingSoft/WPS.js)[MinGW-w64](/dodying/software-for-softwareUpdateManager/blob/master/software/MinGW-w64.js)[Mythicsoft/Agent Ransack](/dodying/software-for-softwareUpdateManager/blob/master/software/Mythicsoft/Agent%20Ransack.js)[Npcap](/dodying/software-for-softwareUpdateManager/blob/master/software/Npcap.js)[OpalCalc](/dodying/software-for-softwareUpdateManager/blob/master/software/OpalCalc.js)[Paragon/Paragon Disk Wiper Professional](/dodying/software-for-softwareUpdateManager/blob/master/software/Paragon/Paragon%20Disk%20Wiper%20Professional.js)[Paragon/Paragon VM Backup](/dodying/software-for-softwareUpdateManager/blob/master/software/Paragon/Paragon%20VM%20Backup.js)[Pixia](/dodying/software-for-softwareUpdateManager/blob/master/software/Pixia.js)[Preme](/dodying/software-for-softwareUpdateManager/blob/master/software/Preme.js)[Python](/dodying/software-for-softwareUpdateManager/blob/master/software/Python.js)[Python2](/dodying/software-for-softwareUpdateManager/blob/master/software/Python2.js)[QTTabBar](/dodying/software-for-softwareUpdateManager/blob/master/software/QTTabBar.js)[Saleen/FilePro](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/FilePro.js)[Saleen/Folder Sync](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Folder%20Sync.js)[Saleen/KeyboardExt](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/KeyboardExt.js)[Saleen/ScanFs](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/ScanFs.js)[Saleen/Tasks Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Tasks%20Manager.js)[Saleen/Video Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Video%20Manager.js)[Saleen/WebDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/WebDownloader.js)3. [shadowsocks-qt5](/dodying/software-for-softwareUpdateManager/blob/master/software/shadowsocks-qt5.js)
-[SmartGit](/dodying/software-for-softwareUpdateManager/blob/master/software/SmartGit.js)[SoftEtherVPN](/dodying/software-for-softwareUpdateManager/blob/master/software/SoftEtherVPN.js)[Stardock/Start8](/dodying/software-for-softwareUpdateManager/blob/master/software/Stardock/Start8.js)[Trillian](/dodying/software-for-softwareUpdateManager/blob/master/software/Trillian.js)[TVDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/TVDownloader.js)[Twitch](/dodying/software-for-softwareUpdateManager/blob/master/software/Twitch.js)4. [Universal Extractor mod by koros aka ya158](/dodying/software-for-softwareUpdateManager/blob/master/software/Universal%20Extractor%20mod%20by%20koros%20aka%20ya158.js)
-[uTorrent](/dodying/software-for-softwareUpdateManager/blob/master/software/uTorrent.js)[VirtualBox](/dodying/software-for-softwareUpdateManager/blob/master/software/VirtualBox.js)[VSO Software/Free Media Player](/dodying/software-for-softwareUpdateManager/blob/master/software/VSO%20Software/Free%20Media%20Player.js)[Vuze](/dodying/software-for-softwareUpdateManager/blob/master/software/Vuze.js)[Weasel](/dodying/software-for-softwareUpdateManager/blob/master/software/Weasel.js)[WinCDEmu](/dodying/software-for-softwareUpdateManager/blob/master/software/WinCDEmu.js)5. [天若OCR](/dodying/software-for-softwareUpdateManager/blob/master/software/%E5%A4%A9%E8%8B%A5OCR.js)
+1. [CnkiDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/CnkiDownloader.js)
+2. [Enigma Virtual Box unpacker](/dodying/software-for-softwareUpdateManager/blob/master/software/Enigma%20Virtual%20Box%20unpacker.js)
+3. [shadowsocks-qt5](/dodying/software-for-softwareUpdateManager/blob/master/software/shadowsocks-qt5.js)
+4. [Universal Extractor mod by koros aka ya158](/dodying/software-for-softwareUpdateManager/blob/master/software/Universal%20Extractor%20mod%20by%20koros%20aka%20ya158.js)
+5. [天若OCR](/dodying/software-for-softwareUpdateManager/blob/master/software/%E5%A4%A9%E8%8B%A5OCR.js)
 
 
 ##### Without Installer
 ###### 缺少安装方式
 
-1. 
-2. 
-3. 
-4. 
-5. 
-6. 
-7. 
-8. 
-9. 
-10. 
-11. 
-12. 
-13. 
-14. 
-15. 
-16. 
-17. 
-18. 
-19. 
-20. 
-21. 
-22. 
-23. 
-24. 
-25. 
-26. 
-27. 
-28. 
-29. 
-30. 
-31. 
-32. 
-33. 
-34. 
-35. 
-36. 
-37. 
-38. 
-39. 
-40. 
-41. 
-42. 
-43. 
-44. 
-45. 
-46. 
-47. 
-48. 
-49. 
-50. 
-51. 
-52. 
-53. 
-54. 
-55. 
-56. 
-57. 
-58. 
-59. 
-60. 
-61. 
-62. 
-63. 
-64. 
-65. 
-66. 
-67. 
-68. 
-69. 
-70. 
-71. 
-72. 
+1. [Ad Muncher](/dodying/software-for-softwareUpdateManager/blob/master/software/Ad%20Muncher.js)
+2. [avidemux](/dodying/software-for-softwareUpdateManager/blob/master/software/avidemux.js)
+3. [Balabolka](/dodying/software-for-softwareUpdateManager/blob/master/software/Balabolka.js)
+4. [BinaryMark/Advanced File Finder](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Advanced%20File%20Finder.js)
+5. [BinaryMark/All the Best YouTube Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/All%20the%20Best%20YouTube%20Downloader.js)
+6. [BinaryMark/Batch Docs](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Docs.js)
+7. [BinaryMark/Batch Encoding Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Encoding%20Converter.js)
+8. [BinaryMark/Batch File Encrypt](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Encrypt.js)
+9. [BinaryMark/Batch File Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Manager.js)
+10. [BinaryMark/Batch File Rename](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Rename.js)
+11. [BinaryMark/Batch File Replace](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Replace.js)
+12. [BinaryMark/Batch File Split & Join](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20File%20Split%20&%20Join.js)
+13. [BinaryMark/Batch Files](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Files.js)
+14. [BinaryMark/Batch Hex Editor](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Hex%20Editor.js)
+15. [BinaryMark/Batch Image Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Converter.js)
+16. [BinaryMark/Batch Image Enhancer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Enhancer.js)
+17. [BinaryMark/Batch Image Resizer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Resizer.js)
+18. [BinaryMark/Batch Image Splitter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Splitter.js)
+19. [BinaryMark/Batch Image Watermarker](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Image%20Watermarker.js)
+20. [BinaryMark/Batch Images](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Images.js)
+21. [BinaryMark/Batch Photo Face](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Photo%20Face.js)
+22. [BinaryMark/Batch RegEx](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20RegEx.js)
+23. [BinaryMark/Batch Text File Editor](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Text%20File%20Editor.js)
+24. [BinaryMark/Batch Word Replace](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Batch%20Word%20Replace.js)
+25. [BinaryMark/Biorhythms Calculator 2018](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Biorhythms%20Calculator%202018.js)
+26. [BinaryMark/Blogspot & Tumblr Image Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Blogspot%20&%20Tumblr%20Image%20Downloader.js)
+27. [BinaryMark/Color Picker Pro](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Color%20Picker%20Pro.js)
+28. [BinaryMark/Database E-Mailer](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Database%20E-Mailer.js)
+29. [BinaryMark/File Hash Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/File%20Hash%20Generator.js)
+30. [BinaryMark/Password Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Password%20Generator.js)
+31. [BinaryMark/Random Item Picker](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Random%20Item%20Picker.js)
+32. [BinaryMark/Random Number Generator](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Random%20Number%20Generator.js)
+33. [BinaryMark/Streaming Video Downloader](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Streaming%20Video%20Downloader.js)
+34. [BinaryMark/Text to MP3 Converter](/dodying/software-for-softwareUpdateManager/blob/master/software/BinaryMark/Text%20to%20MP3%20Converter.js)
+35. [Blue Iris](/dodying/software-for-softwareUpdateManager/blob/master/software/Blue%20Iris.js)
+36. [cFos Software/cFos Broadband Connect](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Broadband%20Connect.js)
+37. [cFos Software/cFos IPv6 Link](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20IPv6%20Link.js)
+38. [cFos Software/cFos Outlook DAV](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Outlook%20DAV.js)
+39. [cFos Software/cFos Personal Net](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos%20Personal%20Net.js)
+40. [cFos Software/cFos](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFos.js)
+41. [cFos Software/cFosSpeed](/dodying/software-for-softwareUpdateManager/blob/master/software/cFos%20Software/cFosSpeed.js)
+42. [ChemTable/Autorun Organizer](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Autorun%20Organizer.js)
+43. [ChemTable/Registry Life](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Registry%20Life.js)
+44. [ChemTable/Soft Organizer](/dodying/software-for-softwareUpdateManager/blob/master/software/ChemTable/Soft%20Organizer.js)
+45. [Classic Shell](/dodying/software-for-softwareUpdateManager/blob/master/software/Classic%20Shell.js)
+46. [Cloudevo](/dodying/software-for-softwareUpdateManager/blob/master/software/Cloudevo.js)
+47. [Clover](/dodying/software-for-softwareUpdateManager/blob/master/software/Clover.js)
+48. [CuteFTP](/dodying/software-for-softwareUpdateManager/blob/master/software/CuteFTP.js)
+49. [EasyDrv](/dodying/software-for-softwareUpdateManager/blob/master/software/EasyDrv.js)
+50. [fman](/dodying/software-for-softwareUpdateManager/blob/master/software/fman.js)
+51. [FreeFileSync](/dodying/software-for-softwareUpdateManager/blob/master/software/FreeFileSync.js)
+52. [OpalCalc](/dodying/software-for-softwareUpdateManager/blob/master/software/OpalCalc.js)
+53. [Paragon/Paragon Disk Wiper Professional](/dodying/software-for-softwareUpdateManager/blob/master/software/Paragon/Paragon%20Disk%20Wiper%20Professional.js)
+54. [Paragon/Paragon VM Backup](/dodying/software-for-softwareUpdateManager/blob/master/software/Paragon/Paragon%20VM%20Backup.js)
+55. [Pixia](/dodying/software-for-softwareUpdateManager/blob/master/software/Pixia.js)
+56. [Preme](/dodying/software-for-softwareUpdateManager/blob/master/software/Preme.js)
+57. [QTTabBar](/dodying/software-for-softwareUpdateManager/blob/master/software/QTTabBar.js)
+58. [Saleen/FilePro](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/FilePro.js)
+59. [Saleen/Folder Sync](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Folder%20Sync.js)
+60. [Saleen/KeyboardExt](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/KeyboardExt.js)
+61. [Saleen/ScanFs](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/ScanFs.js)
+62. [Saleen/Tasks Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Tasks%20Manager.js)
+63. [Saleen/Video Manager](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/Video%20Manager.js)
+64. [Saleen/WebDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/Saleen/WebDownloader.js)
+65. [SoftEtherVPN](/dodying/software-for-softwareUpdateManager/blob/master/software/SoftEtherVPN.js)
+66. [Stardock/Start8](/dodying/software-for-softwareUpdateManager/blob/master/software/Stardock/Start8.js)
+67. [Trillian](/dodying/software-for-softwareUpdateManager/blob/master/software/Trillian.js)
+68. [TVDownloader](/dodying/software-for-softwareUpdateManager/blob/master/software/TVDownloader.js)
+69. [Twitch](/dodying/software-for-softwareUpdateManager/blob/master/software/Twitch.js)
+70. [VSO Software/Free Media Player](/dodying/software-for-softwareUpdateManager/blob/master/software/VSO%20Software/Free%20Media%20Player.js)
+71. [Vuze](/dodying/software-for-softwareUpdateManager/blob/master/software/Vuze.js)
+72. [WinCDEmu](/dodying/software-for-softwareUpdateManager/blob/master/software/WinCDEmu.js)
 

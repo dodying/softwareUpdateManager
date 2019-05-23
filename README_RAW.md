@@ -36,8 +36,8 @@
 
 1. `git clone https://github.com/dodying/softwareUpdateManager`
 2. `npm install`
-3. `git clone https://github.com/dodying/software-for-softwareUpdateManager`
-  并移动 **software** 到 **softwareUpdateManager** 下
+3. 下载 `https://github.com/dodying/software-for-softwareUpdateManager/archive/master.zip`，
+  解压并移动 **software** 到 **softwareUpdateManager** 下
 4. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
 5. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
 
