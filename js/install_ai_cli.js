@@ -12,8 +12,8 @@
 
 let install = async (from, to, args = [], options = {}, callback) => {
   // https://www.advancedinstaller.com/user-guide/exe-setup-file.html
-  args = [].concat('/i', '//', '/passive', '/qr', '/norestart', 'TARGETDIR="{dir}"', args)
-  options = Object.assign({ wait: true }, options)
+  args = [].concat('/i', '//', '/passive', '/qr', '/norestart', 'TARGETDIR="{dir}"', 'INSTALLDIR="{dir}"', args)
+  options = Object.assign({ wait: true, shell: true }, options)
   return require('./install_cli')(from, to, from, args, options, callback)
 }
 

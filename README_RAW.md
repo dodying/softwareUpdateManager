@@ -1,35 +1,26 @@
 <!-- TOC -->
 
-- [SoftwareUpdateManager](#softwareupdatemanager)
-  - [软件更新管理器](#软件更新管理器)
-    - [Note](#note)
-      - [说明](#说明)
-        - [使用方法](#使用方法)
-        - [其他说明](#其他说明)
-    - [Command-Line](#command-line)
-      - [命令行](#命令行)
+- [软件更新管理器](#软件更新管理器)
+    - [说明](#说明)
+      - [使用方法](#使用方法)
+      - [其他说明](#其他说明)
+    - [命令行](#命令行)
     - [TODO](#todo)
-    - [Software Example](#software-example)
-      - [软件示例](#软件示例)
-    - [Supported Search Site](#supported-search-site)
-      - [支持的搜索站点](#支持的搜索站点)
-    - [Supported Software](#supported-software)
-      - [支持的软件](#支持的软件)
-    - [Special Software](#special-software)
-      - [特别的软件](#特别的软件)
-        - [Special Installer](#special-installer)
-          - [特殊的安装方式(作为参考)](#特殊的安装方式作为参考)
-        - [Without Download](#without-download)
-          - [缺少下载地址](#缺少下载地址)
-        - [Without Installer](#without-installer)
-          - [缺少安装方式](#缺少安装方式)
+    - [软件示例](#软件示例)
+    - [支持的搜索站点](#支持的搜索站点)
+    - [支持的软件](#支持的软件)
+    - [特别的软件](#特别的软件)
+        - [特殊的安装方式(作为参考)](#特殊的安装方式作为参考)
+        - [缺少下载地址](#缺少下载地址)
+        - [缺少安装方式](#缺少安装方式)
 
 <!-- /TOC -->
 
-# SoftwareUpdateManager
+
 ## 软件更新管理器
 
-### Note
+[English ReadMe](README_en.md)
+
 #### 说明
 
 ##### 使用方法
@@ -51,7 +42,6 @@
 6. 安装方法并没有一一测试，如果自动安装失败，请尝试手动安装
 
 
-### Command-Line
 #### 命令行
 
 * `--help`
@@ -62,7 +52,7 @@
 * `[--quiet] [--profile name] [ --test | --test-download | --test-install | --check | --backup | --install ] [name]`
 
 <details>
-  <summary>Command-Line Details</summary>
+  <summary>命令行详情</summary>
 
 * `node index`
 
@@ -74,7 +64,7 @@
 * `--makemd`, `-md`
 
     `node index.js --makemd`
-    根据`software`文件夹下的`js`文件创建`README.md`
+    更新`README.md`
 * `--search`, `-s`
 
     `node index.js --search keyword`
@@ -128,56 +118,32 @@
 </details>
 
 
-### TODO
-
-* [x] 支持同一软件的不同版本
-* [x] 从 [FileHorse.com](http://www.filehorse.com/) 等网站搜索并生成相应js
-* [x] 自动检查安装包类型并安装
-* [ ] Request模式下，检查文件是否完整
+#### TODO
 
 
-### Software Example
 #### 软件示例
 
-请参照 [Telegram](software/Telegram.js)
-<details>
-  <summary>Example Details</summary>
+详见 [Telegram](software/Telegram.js)
 
-```js
-{example}
-```
-</details>
-
-
-### Supported Search Site
 #### 支持的搜索站点
 
 {search}
 
 
-### Supported Software
 #### 支持的软件
 
-<details>
-  <summary>Software List Details</summary>
+详见 [SupportedSoftwares.md](SupportedSoftwares.md)
 
-{software}
-</details>
-
-### Special Software
 #### 特别的软件
 
-##### Special Installer
 ###### 特殊的安装方式(作为参考)
 
 {software-special-installer}
 
-##### Without Download
 ###### 缺少下载地址
 
 {software-without-download}
 
-##### Without Installer
 ###### 缺少安装方式
 
 {software-without-installer}

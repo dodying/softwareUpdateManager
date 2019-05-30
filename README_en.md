@@ -1,48 +1,47 @@
 <!-- TOC -->
 
-- [软件更新管理器](#软件更新管理器)
-    - [说明](#说明)
-      - [使用方法](#使用方法)
-      - [其他说明](#其他说明)
-    - [命令行](#命令行)
+- [SoftwareUpdateManager](#softwareupdatemanager)
+    - [Note](#note)
+      - [Usage](#usage)
+      - [Other](#other)
+    - [Command-Line](#command-line)
     - [TODO](#todo)
-    - [软件示例](#软件示例)
-    - [支持的搜索站点](#支持的搜索站点)
-    - [支持的软件](#支持的软件)
-    - [特别的软件](#特别的软件)
-        - [特殊的安装方式(作为参考)](#特殊的安装方式作为参考)
-        - [缺少下载地址](#缺少下载地址)
-        - [缺少安装方式](#缺少安装方式)
+    - [Software Example](#software-example)
+    - [Supported Search Site](#supported-search-site)
+    - [Supported Software](#supported-software)
+    - [Special Software](#special-software)
+        - [Special Installer](#special-installer)
+        - [Without Download](#without-download)
+        - [Without Installer](#without-installer)
 
 <!-- /TOC -->
 
+## SoftwareUpdateManager
 
-## 软件更新管理器
+[中文说明](README.md)
 
-[English ReadMe](README_en.md)
+#### Note
 
-#### 说明
-
-##### 使用方法
+##### Usage
 
 1. `git clone https://github.com/dodying/softwareUpdateManager`
 2. `npm install`
-3. 下载 `https://github.com/dodying/software-for-softwareUpdateManager/archive/master.zip`，
-  解压并移动 **software** 到 **softwareUpdateManager** 下
-4. 从[这里](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins)下载 **plugins.7z**，并解压到 **plugins** 下
-5. 复制一份 **config.default.js**，按其中注释修改并存为 **config.js**
+3. Download `https://github.com/dodying/software-for-softwareUpdateManager/archive/master.zip`,
+  extract and move **software** to under **softwareUpdateManager**
+4. Download **plugins.7z** from [here](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins), and extract to **plugins**
+5. Copy **config.default.js**, modify and save as **config.js**
 
-##### 其他说明
+##### Other
 
-1. 以下软件，如果`通常版(installer)`与`便携版(portable)`功能相同则一般以绿色版优先(如果安装版的包小许多，则可能以安装版优先)，同时64位优先
+1. 以下软件, 如果`通常版(installer)`与`便携版(portable)`功能相同则一般以绿色版优先(如果安装版的包小许多, 则可能以安装版优先), 同时64位优先
 2. 大多软件都支持自动安装
-3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion)， 带 :airplane: 的需**番羽土墙**， 带 :hand: 的需**手动下载/安装**， 带 :pushpin: 的表示**安装目录固定**
+3. 带 :money_with_wings: 的为**商业软件** (包括Freemium与Free Persion),  带 :airplane: 的需**番羽土墙**,  带 :hand: 的需**手动下载/安装**,  带 :pushpin: 的表示**安装目录固定**
 4. 代理优先级(前提是设置了代理): `config.urlWithoutProxy > config.urlWithProxy > config.useProxy > software.useProxy`
 5. 模式优先级: `config.specialMode > config.mode = config.commercialSoftware`
-6. 安装方法并没有一一测试，如果自动安装失败，请尝试手动安装
+6. 安装方法并没有一一测试, 如果自动安装失败, 请尝试手动安装
 
 
-#### 命令行
+#### Command-Line
 
 * `--help`
 * `--makemd`
@@ -52,93 +51,92 @@
 * `[--quiet] [--profile name] [ --test | --test-download | --test-install | --check | --backup | --install ] [name]`
 
 <details>
-  <summary>命令行详情</summary>
+  <summary>Command-Line Details</summary>
 
 * `node index`
 
    `node index.js`
-    检查并更新所有软件
+    check and update all softwares
 * `--help`, `-h`
 
     `node index.js --help`
 * `--makemd`, `-md`
 
     `node index.js --makemd`
-    更新`README.md`
+    update `README.md`
 * `--search`, `-s`
 
     `node index.js --search keyword`
-    搜索并创建`js`文件
+    search and create `js` file
 * `--profile`, `-p`
 
     `node index.js --profile name`
     eg: `node index.js -profile sync`
-        ==> 当`config`与`config.profile.sync`中存在相同项时，以`config.profile.sync`优先，同时数据会保存在`data-sync.json`中
+        ==> 当`config`与`config.profile.sync`中存在相同项时, 以`config.profile.sync`优先, 同时数据会保存在`data-sync.json`中
 * `--list`, `-l`
 
     `node index.js --list`
-    列出`database.json`中的软件及版本
+    list software saved in`database.json`
 * `--quiet`, `-q`
 
     `node index.js --quiet`
-    所有的提问为false或0(第一项)
+    passive mode
 * `--filter`, `-f`
 
     `node index.js --filter name`
-    检查并更新匹配的软件(多个匹配条件用`,`相隔) (忽略更新间隔)
+    check these softwares (seperated by`,`) (ignore check interval)
 * `--test`, `-t`
 
     `node index.js --test`
-    获取网上所有软件的最新版本号 (忽略更新间隔)
+    check latest version (ignore check interval)
 * `--test-download`, `-td`
 
     `node index.js --test-download`
-    获取网上所有软件的最新版本号，并下载 (使用 profile test)
+    check latest version, and download (use profile test)
 * `--test-download`, `-ti`
 
     `node index.js --test-install`
-    获取网上所有软件的最新版本号，并下载安装 (使用 profile test)
+    check latest version, download and install (use profile test)
 * `--check`, `-c`
 
     `node index.js --check`
-    获取网上软件的最新版本号，并写入`database.json` (忽略更新间隔)
-    效果: 忽略本地版本
+    check latest version and save into `database.json` (ignore check interval)
 * `--backup`, `-b`
 
     `node index.js --backup`
-    获取网上软件的最新版本，并下载安装包 (忽略更新间隔)
+    get latest version of software installer (ignore check interval)
 * `--install`, `-i`
 
     `node index.js --install`
-    安装本地最新版本
+    install the latest version you download before
 * `software_name`
 
     `node index.js 7-Zip AIMP "Google Chrome"`
-    检查并更新这些软件(多个软件用`空格`相隔) (忽略更新间隔)
+     check these softwares (seperated by `space`) (ignore check interval)
 </details>
 
 
 #### TODO
 
 
-#### 软件示例
+#### Software Example
 
-详见 [Telegram](software/Telegram.js)
+Refer to [Telegram](software/Telegram.js)
 
-#### 支持的搜索站点
+#### Supported Search Site
 
 1. FileHorse
 2. Pc6
 3. Softpedia
 
 
-#### 支持的软件
+#### Supported Software
 
-详见 [SupportedSoftwares.md](SupportedSoftwares.md)
+Refer to [SupportedSoftwares.md](SupportedSoftwares.md)
 
-#### 特别的软件
+#### Special Software
 
-###### 特殊的安装方式(作为参考)
+###### Special Installer
 
 1. [Advanced IP Scanner](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/Advanced%20IP%20Scanner.js)
 2. [AIMP](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/AIMP.js)
@@ -164,7 +162,7 @@
 22. [Weasel](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/Weasel.js)
 
 
-###### 缺少下载地址
+###### Without Download
 
 1. [CnkiDownloader](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/CnkiDownloader.js)
 2. [Enigma Virtual Box unpacker](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/Enigma%20Virtual%20Box%20unpacker.js)
@@ -173,7 +171,7 @@
 5. [天若OCR](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/%E5%A4%A9%E8%8B%A5OCR.js)
 
 
-###### 缺少安装方式
+###### Without Installer
 
 1. [Ad Muncher](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/Ad%20Muncher.js)
 2. [avidemux](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/avidemux.js)

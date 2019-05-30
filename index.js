@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1163
+// @Version:            1.1.1177
 // @Author:             dodying
-// @Date:               2019-5-23 11:22:41
+// @Date:               2019-5-30 11:09:55
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -242,7 +242,7 @@ if (args.length) {
       }
 
       let md = fse.readFileSync('README_RAW.md', 'utf-8')
-      let example = fse.readFileSync('./software/Telegram.js', 'utf-8')
+      let mdEn = fse.readFileSync('README_en_RAW.md', 'utf-8')
       let search = fse.readdirSync('./js/search').map((item, order) => `${order + 1}. ${path.parse(item).name}`).join('\n')
       let software = ''
 
@@ -311,29 +311,36 @@ if (args.length) {
 
           if (!info.download && !info.site) {
             softwareWithoutDownload += `${orderForWithoutDownload + 1}. `
-            softwareWithoutDownload += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareWithoutDownload += `[${name}](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareWithoutDownload += '\n'
             orderForWithoutDownload++
           } else if (!info.install) {
             softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
-            softwareWithoutInstaller += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareWithoutInstaller += `[${name}](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareWithoutInstaller += '\n'
             orderForWithoutInstaller++
           } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
             softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
-            softwareSpecialInstaller += `[${name}](/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareSpecialInstaller += `[${name}](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
             softwareSpecialInstaller += '\n'
             orderForSpecialInstaller++
           }
         }
       }
-      md = md.replace(/{example}/, example)
+
       md = md.replace(/{search}/, search)
-      md = md.replace(/{software}/g, software)
       md = md.replace(/{software-without-download}/g, softwareWithoutDownload)
       md = md.replace(/{software-without-installer}/g, softwareWithoutInstaller)
       md = md.replace(/{software-special-installer}/g, softwareSpecialInstaller)
       fse.writeFileSync('README.md', md)
+
+      mdEn = mdEn.replace(/{search}/, search)
+      mdEn = mdEn.replace(/{software-without-download}/g, softwareWithoutDownload)
+      mdEn = mdEn.replace(/{software-without-installer}/g, softwareWithoutInstaller)
+      mdEn = mdEn.replace(/{software-special-installer}/g, softwareSpecialInstaller)
+      fse.writeFileSync('README_en.md', mdEn)
+
+      fse.writeFileSync('SupportedSoftwares.md', software)
       process.exit()
     })()
   } else if (args.includes('--search')) {
