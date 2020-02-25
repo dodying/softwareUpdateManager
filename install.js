@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               install
 // @Description:        install
-// @Version:            1.0.44
+// @Version:            1.0.62
 // @Author:             dodying
-// @Date:               2019-3-27 17:07:04
+// @Modified:           2020-1-17 10:51:35
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            fs-extra,readline-sync
@@ -38,7 +38,11 @@ const main = async () => {
       topathTrue = topath + '-' + (order++)
     }
 
-    await install(fullpath, path.resolve(topathTrue, name))
+    await install({
+      output: fullpath,
+      parentPath: topathTrue,
+      path: path.resolve(topathTrue, name)
+    })
 
     fse.emptyDirSync('./unzip')
   }

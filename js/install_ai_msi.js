@@ -3,29 +3,23 @@
 /**
  * @description regard the install pack as Advanced Installer With Raw Msi
  * @returns {boolean} if install completed
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} info
  * @param {(string | array)} excludes what files you don't want to install
  * @param {(string | RegExp)} installMsi what msi you want to install (with .msi) // String: 完全相等, RegExp: 匹配即可
  * @param {string} preferPath
  * @param {(string | array)} msiParams
  */
 
-let install = async (from, to, excludes = [], installMsi, preferPath, msiParams) => {
+let install = async (info, excludes = [], installMsi, preferPath, msiParams) => {
   const path = require('path')
   const fse = require('fs-extra')
   const cp = require('child_process')
 
   let install = () => {
-    let { dir: parentPath } = path.parse(to)
-    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-      parentPath = path.parse(parentPath).dir
-    }
-
     let tmpNumber = Math.random().toString()
-    let tmpFolder = path.resolve(__dirname, './../unzip/', tmpNumber)
+    let tmpFolder = path.resolve(info.fns.dirname, 'unzip', tmpNumber)
     fse.mkdirSync(tmpFolder)
-    cp.execSync(`"${from}" /extract:"${tmpFolder}"`)
+    cp.execSync(`"${info.output}" /extract:"${tmpFolder}"`)
 
     let fromNew = tmpFolder
     let list = fse.readdirSync(fromNew)
@@ -39,18 +33,20 @@ let install = async (from, to, excludes = [], installMsi, preferPath, msiParams)
     }
 
     for (let file of list) {
-      let _path = path.resolve('./', fromNew, file)
+      let _path = path.resolve(fromNew, file)
       if ((typeof installMsi === 'string' && file === installMsi) || (installMsi instanceof RegExp && file.match(installMsi))) {
-        return require('./install_msi')(_path, to, excludes, preferPath, msiParams)
+        info.output = _path
+        return require('./install_msi')(info, excludes, preferPath, msiParams)
       } else {
         continue
       }
     }
 
+    console.error(`Error:\tCan't find file "${installMsi}"`)
     return false
   }
 
-  let killed = require('./kill')(from, to)
+  let killed = require('./kill')(info.parentPath)
   if (!killed) return false
 
   try {

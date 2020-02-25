@@ -1,12 +1,12 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1177
+// @Version:            1.1.1837
 // @Author:             dodying
-// @Date:               2019-5-30 11:09:55
+// @Modified:           2019-12-20 00:20:54
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
-// @Require:            cheerio,deepmerge,fs-extra,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
+// @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
 // ==/Headers==
 /* eslint-disable no-control-regex */
 
@@ -18,19 +18,26 @@ const path = require('path')
 const cp = require('child_process')
 const url = require('url')
 const readline = require('readline')
+const util = require('util')
 
 // 导入第三方模块
 const fse = require('fs-extra')
 const cheerio = require('cheerio')
 const readlineSync = require('readline-sync')
 const request = require('request')
-const requestPromise = require('request-promise')
-const Agent = require('socks5-http-client/lib/Agent')
-const Agent2 = require('socks5-https-client/lib/Agent')
+// const requestPromise = require('request-promise')
+// const Agent = require('socks5-http-client/lib/Agent')
+// const Agent2 = require('socks5-https-client/lib/Agent')
 const notifier = require('node-notifier')
 const merge = require('deepmerge')
+// const iconv = require('iconv-lite')
+const html2Text = require('html-to-text')
 const walk = require('./js/walk')
 const replace = require('./js/replaceWithDict')
+const req = require('./js/req')
+req.config.set('_', _)
+const reqRaw = req.raw
+const reqHEAD = req.head
 
 // Console
 const color = {
@@ -63,14 +70,21 @@ const color = {
 const _color = {
   log: color.FgGreen,
   warn: color.FgYellow,
-  error: color.BgRed
-
+  error: color.BgRed,
+  debug: color.FgBlue
 }
 var consoleRaw = {}
 function logModify (colorMsg, msg) {
+  let lastKey
   return typeof msg === 'string' ? msg.split('\n').map(j => {
-    if (j.match(/^(.*):\t(.*)$/)) {
+    if (j.match(/^(.*):\t(.*)$/) || lastKey) {
       let result = j.match(/^(.*):\t(.*)$/)
+      if (result) {
+        lastKey = result[1]
+      } else {
+        result = [null, lastKey, j]
+      }
+      lastKey = result[1]
       let space = 16 - result[1].length - 1
       if (result[2].match(/^"/)) space = space - 1
       return `${color.FgCyan}${result[1]}${color.Reset}:${' '.repeat(space)}${colorMsg}${result[2]}${color.Reset}`
@@ -79,22 +93,24 @@ function logModify (colorMsg, msg) {
     }
   }).join('\n') : msg
 }
-for (let i of ['log', 'warn', 'error']) {
+for (let i of ['log', 'warn', 'error', 'debug']) {
   consoleRaw[i] = console[i]
   let logFile = path.resolve(__dirname, 'index.log')
   let colorRe = new RegExp('\x1b\\[\\d+m', 'gi')
-  let logPip = fse.createWriteStream(logFile, { flags: 'a' })
   console[i] = (...args) => {
-    args.forEach(msg => {
+    for (let msg of args) {
+      let msgString
+      if (msg instanceof Error) msg = `Error:\t${util.format(msg).trim()}`
       if (typeof msg === 'string') {
         msg = logModify(_color[i], msg)
-        consoleRaw[i](msg)
-        if (_.debug) logPip.write(msg.replace(colorRe, '') + '\n')
+        if (_.debug) msgString = msg.replace(colorRe, '')
       } else {
-        consoleRaw[i](msg)
-        if (_.debug) logPip.write(JSON.stringify(msg, null, 2) + '\n')
+        if (_.debug) msgString = util.formatWithOptions(_.formatOptions, msg)
       }
-    })
+
+      if (_.debug) fse.appendFileSync(logFile, msgString + '\n')
+      if (i !== 'debug' || (_.debug && typeof msg === 'string')) consoleRaw[i](msg)
+    }
   }
 }
 for (let i in readlineSync) {
@@ -110,16 +126,15 @@ for (let i in readlineSync) {
     return raw(msg)
   }
 }
+for (let i in _.defaultOptions) util.inspect.defaultOptions[i] = _.defaultOptions[i]
 
 // 全局函数
 // 处理config
 _.archivePath = path.resolve(__dirname, _.archivePath)
 _.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com')
 
-let exts = ['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz', '.iso']
+let exts = ['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz', '.iso', '.nupkg']
 let exts2 = ['.gz', '.bz2', '.xz']
-
-var uriLast; var cookies = request.jar(); var retryList = {}; var proxyList = {}
 
 const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins'
 
@@ -131,6 +146,7 @@ var argAlias = {
   '-h': '--help',
   '-md': '--makemd',
   '-l': '--list',
+  '-u': '--update',
   '-s': '--search',
 
   '-c': '--check',
@@ -165,7 +181,7 @@ if (args.length && args.includes('--profile')) {
   args.splice(index, 2)
   databaseFile = `./database-${profile}.json`
   if (!(profile in _.profile) || Object.keys(_.profile[profile]).length === 0) {
-    console.error(`Error:\tNo Profile ${profile}`)
+    console.error(`Error:\tNo Profile "${profile}"`)
     process.exit()
   }
   _ = _.profile[profile].deepmerge ? merge(_, _.profile[profile]) : Object.assign(_, _.profile[profile])
@@ -191,6 +207,7 @@ if (args.length) {
       ' -h, --help                        Print help',
       ' -md, --makemd                     Make README',
       ' -l, --list                        sort and list softwares',
+      ' -u, --update                      update',
       ' -s [keyword], --search [keyword]  search software',
       '',
       'Mode Option:',
@@ -257,7 +274,7 @@ if (args.length) {
 
       // let list = fse.readdirSync('software')
       let list = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/'))
-      let descriptionUrl = ['github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com', 'www.nirsoft.net', 'www.sordum.org', 'docs.microsoft.com', 'www.the-sz.com', 'www.diskinternals.com', 'www.glarysoft.com', 'www.abelssoft.de', 'www.jam-software.com', 'www.sterjosoft.com', 'www.wisecleaner.com', 'vovsoft.com']
+      let descriptionUrl = ['github.com', 'api.github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com', 'www.nirsoft.net', 'www.sordum.org', 'docs.microsoft.com', 'www.the-sz.com', 'www.diskinternals.com', 'www.glarysoft.com', 'www.abelssoft.de', 'www.jam-software.com', 'www.sterjosoft.com', 'www.wisecleaner.com', 'vovsoft.com', 'www.fosshub.com']
       for (let i = 0; i < list.length; i++) {
         if (fse.statSync(path.resolve('software', list[i])).isFile()) {
           let info = require(path.resolve('software', list[i]))
@@ -265,6 +282,8 @@ if (args.length) {
           let src = encodeURI(list[i])
           let uri = info.url || Object.values(info.site)[0]
           let host = new URL(uri).host
+          // let filePre = 'https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software'
+          let filePre = 'software'
 
           software += `${i + 1}. `
           software += `[`
@@ -279,14 +298,19 @@ if (args.length) {
           if (info.fixedPath) software += ' :pushpin:'
 
           if (!(name in database) && descriptionUrl.includes(host)) {
-            console.log(`Index ${i + 1}:\t${name}`)
+            console.log(`Index-${i + 1}:\t${name}`)
+            if (uri.match(/api\.github\.com\/repos\/(.*)\/releases/)) {
+              let matched = uri.match(/api\.github\.com\/repos\/(.*)\/releases/)[1]
+              uri = `https://github.com/${matched}/releases/`
+            }
+
             let res = await req(uri, { useProxy: info.useProxy })
             if (res instanceof Error || !res || res.statusCode >= 300 || res.statusCode < 200) res = await req(uri, { useProxy: !info.useProxy })
-            if (res.statusCode >= 200 || res.statusCode < 300) {
+            if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
               let $ = cheerio.load(res.body)
               let description = $('[itemprop="description"]').text() || $('[name="description"]').attr('content') || $('[property="og:description"]').attr('content') || $('[name="twitter:description"]').attr('content') || ''
-              if (uri.match('/github.com/(.*?)/releases')) {
-                let repo = res.request.uri.href.match('/github.com/(.*?)/releases')[1]
+              if (uri.match(/\/github.com\/(.*?)\/releases/)) {
+                let repo = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[1]
                 let watch = $('.social-count[aria-label$="watching this repository"]').eq(0).text().trim()
                 let star = $('.social-count[aria-label$="starred this repository"]').eq(0).text().trim()
                 let fork = $('.social-count[aria-label$="forked this repository"]').eq(0).text().trim()
@@ -301,7 +325,7 @@ if (args.length) {
               }
               database[name] = description.replace(/[\r\n]+/, ' ').trim()
             } else {
-              console.log(name, res.statusCode, uri)
+              console.error(`Error:\t${res.statusCode} ${res.statusMessage}`)
             }
             fse.writeJSONSync('./software.json', database, { spaces: 2 })
           }
@@ -311,17 +335,18 @@ if (args.length) {
 
           if (!info.download && !info.site) {
             softwareWithoutDownload += `${orderForWithoutDownload + 1}. `
-            softwareWithoutDownload += `[${name}](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareWithoutDownload += `[${name}](${filePre}/${src})`
             softwareWithoutDownload += '\n'
             orderForWithoutDownload++
           } else if (!info.install) {
             softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `
-            softwareWithoutInstaller += `[${name}](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareWithoutInstaller += `[${name}](${filePre}/${src})`
+            if (info.installType) softwareWithoutInstaller += ` ${info.installType}`
             softwareWithoutInstaller += '\n'
             orderForWithoutInstaller++
           } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
             softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `
-            softwareSpecialInstaller += `[${name}](https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software/${src})`
+            softwareSpecialInstaller += `[${name}](${filePre}/${src})`
             softwareSpecialInstaller += '\n'
             orderForSpecialInstaller++
           }
@@ -344,15 +369,6 @@ if (args.length) {
       process.exit()
     })()
   } else if (args.includes('--search')) {
-    let keyword = args[args.indexOf('--search') + 1]
-    args = keyword
-    if (!keyword) {
-      console.error('Error:\tPlease put in your keyword')
-      process.exit()
-    }
-
-    mode = 'search'
-    softwareFilter = () => false
   }
 
   if (args.includes('--quiet')) {
@@ -392,48 +408,75 @@ if (args.length) {
   }
 }
 
-var software = {}
-var softwareAll = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, ''))
-softwareAll.forEach(i => {
-  let info
-  try {
-    info = require(`./software/${i}.js`)
-    if (info.other) softwareAll.push(...Object.keys(info.other).map(j => `${i}:${j}`))
-  } catch (error) {}
-})
-var softwareList = ['test', 'test-download', 'test-install'].includes(mode) ? softwareAll : Object.keys(_.software)
-
 if (!softwareFilter) {
   if (args.length === 0) {
     softwareFilter = () => true
   } else {
-    softwareFilter = software => args.includes(software)
+    softwareFilter = i => args.includes(i)
   }
 }
 
+var softwareList
+if (['test', 'test-download', 'test-install'].includes(mode)) {
+  let softwareAll = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, ''))
+  softwareAll.forEach(i => {
+    let info
+    try {
+      info = require(`./software/${i}.js`)
+      if (info.other) softwareAll.push(...Object.keys(info.other).map(j => `${i}:${j}`))
+    } catch (error) {
+      console.error(error)
+    }
+  })
+  softwareList = softwareAll.sort((a, b) => a.toUpperCase() > b.toUpperCase() ? 1 : a.toUpperCase() < b.toUpperCase() ? -1 : 0)
+} else {
+  softwareList = Object.keys(_.software)
+}
+
+var software = {}
 softwareList.forEach(i => {
   let match = i.match(/^(.*):(.*)$/)
-  let raw, version
-  if (match) [, raw, version] = match
+  let [, raw, version] = match || [null, i]
 
   if (softwareFilter(i)) {
-    if (fse.existsSync(`./software/${match ? raw : i}.js`)) {
-      if (match) {
-        software[i] = Object.assign({}, require(`./software/${raw}.js`))
+    if (fse.existsSync(`./software/${raw}.js`)) {
+      software[i] = Object.assign({}, require(`./software/${raw}.js`))
+
+      if (version) {
         if (software[i].other[version]) {
+          if (!software[i].other[version].url && software[i].other[version].site) software[i].other[version].url = null
           software[i] = Object.assign(software[i], software[i].other[version])
         } else {
-          console.error(`Software:\t${i}\nError:\tNo Version named "${version}"`)
+          console.error(`Error:\tNo Version named "${i}:${version}"`)
           delete software[i]
         }
-      } else {
-        software[i] = require(`./software/${i}.js`)
       }
     } else {
-      console.error(`Software:\t${i}\nError:\tNo this js in folder "software"`)
+      // TODO: get from remote
+      console.error(`Error:\tNot Exists "${i}"`)
     }
   }
 })
+
+if (args.length > 1 && Object.keys(software).length === 0) {
+  let i = args.join(' ')
+  let match = i.match(/^(.*):(.*)$/)
+  let [, raw, version] = match || [null, i]
+
+  if (softwareList.includes(raw) && fse.existsSync(`./software/${raw}.js`)) {
+    software[i] = Object.assign({}, require(`./software/${raw}.js`))
+
+    if (version) {
+      if (software[i].other[version]) {
+        if (!software[i].other[version].url && software[i].other[version].site) software[i].other[version].url = null
+        software[i] = Object.assign(software[i], software[i].other[version])
+      } else {
+        console.error(`Error:\tNo Version named "${i}:${version}"`)
+        delete software[i]
+      }
+    }
+  }
+}
 
 var fns = {
   cheerio,
@@ -462,20 +505,15 @@ function spawnSync (...argsForSpwan) {
   return new Promise(resolve => {
     let child = cp.spawn(...argsForSpwan)
 
-    let logFile = path.resolve(__dirname, 'index.log')
-    let logPip = fse.createWriteStream(logFile, { flags: 'a' })
-    if (_.debug) {
-      child.stdout.pipe(logPip)
-      child.stderr.pipe(logPip)
-    }
-
     child.stdout.pipe(process.stdout)
     child.stderr.pipe(process.stderr)
     child.on('exit', function (code) {
       let end
       if (code.toString() !== '0') {
         end = 'error'
-        console.error(`Command:\t${argsForSpwan[0]}\nCommand Args:${argsForSpwan[1].map(i => `{${i}}`).join(', ')}\nExit Code:\t${code.toString()}`)
+        console.error(`Command:\t${argsForSpwan[0]}`)
+        console.error(`Command-Args:${argsForSpwan[1].map(i => `{${i}}`).join(', ')}\n`)
+        console.error(`Exit-Code:\t${code.toString()}`)
       } else {
         end = true
       }
@@ -484,178 +522,14 @@ function spawnSync (...argsForSpwan) {
   })
 }
 
-function reqOption (uriOrOption, optionUser = {}) {
-  let option = typeof uriOrOption === 'string' ? { uri: uriOrOption } : uriOrOption
-  let uri = option.uri
-  let useProxy = optionUser.useProxy
-
-  if (uriLast) uri = new URL(uri, uriLast).href
-  option = Object.assign({
-    method: 'GET',
-    headers: {
-      'User-Agent': _.request.userAgent,
-      // 'Accept-Language': '*;q=0.5',
-      'Referer': uriLast && new URL(uriLast).hostname === new URL(uri).hostname ? uriLast : uri
-    },
-    timeout: _.request.timeout * 1000,
-    jar: cookies,
-    strictSSL: false,
-    resolveWithFullResponse: true,
-    simple: false
-  }, option, { uri })
-
-  uri = option.uri || option.url
-  delete option.url
-
-  if (uri !== uriLast || !(url.parse(uri).hostname in proxyList)) {
-    if (_.urlWithoutProxy.some(urlfilter => uri.match(urlfilter))) {
-      useProxy = false
-    } else if (_.urlWithProxy.some(urlfilter => uri.match(urlfilter)) || _.useProxy === 2 || (_.useProxy === 1 && useProxy)) {
-      useProxy = true
-    }
-  } else {
-    useProxy = useProxy === undefined || (_.autoToggleProxy && proxyList[url.parse(uri).hostname]) ? !proxyList[url.parse(uri).hostname] : useProxy
-  }
-  proxyList[url.parse(uri).hostname] = useProxy
-
-  if (useProxy && _.request.proxy && _.request.proxy.match(/(http|socks5):\/\/((.*?):(.*?)@)?(.*?):(\d+)/i)) {
-    let [, protocol,, username, password, hostname, port] = _.request.proxy.match(/(http|socks5):\/\/((.*?):(.*?)@)?(.*?):(\d+)/i)
-    if (protocol.toLowerCase() === 'http') {
-      option.proxy = _.request.proxy
-    } else if (protocol.toLowerCase() === 'socks5') {
-      option.agentClass = uri.match(/^http:/) ? Agent : Agent2
-      option.agentOptions = {
-        socksHost: hostname,
-        socksPort: port
-      }
-      if (username && password) {
-        option.agentOptions.socksUsername = username
-        option.agentOptions.socksPassword = password
-      }
-    }
-  }
-  console.warn(`${option.method}${option.proxy ? '+proxy' : ''}:\t${uri}`)
-
-  uriLast = uri
-  return option
-}
-
-async function req (uriOrOption, optionUser = {}) {
-  let option = reqOption(uriOrOption, optionUser)
-  let uri = option.uri || option.url
-
-  let errorHandle = (message) => {
-    retryList[uri] = uri in retryList ? retryList[uri] + 1 : 1
-
-    console.error(`Try ${retryList[uri]}:\t${message}`)
-    return _.request.retry > retryList[uri] ? req(uriOrOption, optionUser) : null
-  }
-
-  let res
-  try {
-    res = await requestPromise(option)
-    let succeed = typeof optionUser.check === 'function' ? optionUser.check(res) : res.statusCode >= 200 || res.statusCode < 300
-    if (succeed) {
-      if (res.body) {
-        try {
-          res.json = JSON.parse(res.body)
-        } catch (error) {}
-      }
-      delete retryList[uri]
-      return res
-    } else {
-      return errorHandle(res.statusCode + ' ' + res.statusMessage)
-    }
-  } catch (error) {
-    if (error.cause.errno === 'ETIMEDOUT' && error.cause.port === 443 && uri.match('http://')) {
-      option.uri = uri.replace('http://', 'https://')
-      return req(option, optionUser)
-    } else {
-      return errorHandle(error.message)
-    }
-  }
-}
-
-function reqRaw (uriOrOption, optionUser = {}) {
-  let option = reqOption(uriOrOption, optionUser)
-  return request(option)
-}
-
-async function reqHEAD (uriOrOption, optionUser = {}) {
-  let option = typeof uriOrOption === 'string' ? { uri: uriOrOption } : uriOrOption
-  let uri = option.uri
-  let useProxy = optionUser.useProxy
-  let withoutHeader = optionUser.withoutHeader
-
-  let retry = 1
-  let head = async () => {
-    return new Promise((resolve, reject) => {
-      let req
-      let _withoutHeader = _.download.urlWithoutHeader.some(urlfilter => uri.match(urlfilter)) || withoutHeader
-      if (!_withoutHeader) {
-        req = reqRaw(option, optionUser)
-      } else {
-        option = Object.assign(option, {
-          headers: {},
-          jar: request.jar(),
-          removeRefererHeader: true
-        })
-        req = reqRaw(option, optionUser)
-      }
-      let html = ''
-      let reses = []
-
-      req.on('redirect', function () {
-        if (_.debug) console.log(`Redirect:\t${this.uri.href}`)
-      }).on('response', async res => {
-        reses.push(res)
-        if (['application', 'binary'].some(i => res.headers['content-type'].match(i))) {
-          req.abort()
-          resolve(reses)
-          return
-        }
-
-        res.on('end', async function () {
-          let $ = cheerio.load(html)
-          let match = html.match(/<meta http-equiv="?refresh"? content="?(.*)"?/i)
-          let refresh = $('meta[http-equiv="refresh"],meta[http-equiv="REFRESH"]')
-          if (refresh.length || match) {
-            let uri1 = refresh.length ? refresh.attr('content') : match[1]
-            uri1 = uri1.match(/url=(.*)/i)[1]
-            option.uri = uri1
-            let reses1 = await reqHEAD(option, { useProxy })
-            resolve(reses.concat(reses1))
-          } else {
-            resolve(reses)
-          }
-        })
-        res.on('data', chunk => {
-          html += chunk
-        })
-      }).on('error', async error => {
-        console.error(`Try ${retry}:\t${error.message}`)
-        retry = retry + 1
-        useProxy = !useProxy
-        if (_.request.retry > retry) {
-          let reses1 = await head()
-          resolve(reses.concat(reses1))
-        } else {
-          resolve(reses)
-        }
-      })
-    })
-  }
-  let reses = await head()
-  return reses[reses.length - 1]
-}
-
 function getHash (file, algorithm) {
   // Hash algorithms: MD2 MD4 MD5 SHA1 SHA256 SHA384 SHA512
   return cp.spawnSync('certutil', ['-hashfile', file, algorithm]).output[1].toString().split(/[\r\n]+/)[1]
 }
 
 function ExtendSoftware (data) {
-  if (data.version) {
+  let valid = any => typeof any === 'string' || any instanceof Array || any instanceof Function
+  if (data.version && valid(data.version)) {
     if (typeof data.version === 'string') {
       data.version = { selector: data.version }
     } else if (data.version instanceof Function) {
@@ -664,45 +538,75 @@ function ExtendSoftware (data) {
       data.version = {
         selector: data.version[0],
         attr: data.version[1],
-        match: data.version[2]
+        match: data.version[2],
+        replace: data.version[3]
       }
     }
   }
 
-  if (data.download) {
-    if (typeof data.download === 'string') {
-      if (data.download.match(/^https?:/i)) {
-        data.download = { plain: data.download }
-      } else {
-        data.download = { selector: data.download }
+  if (data.changelog && valid(data.changelog)) {
+    data.changelog = [].concat(data.changelog)
+    if (typeof data.changelog[0] === 'string') {
+      if (!data.changelog[0].match(/^https?:/i)) data.changelog.unshift(null)
+
+      data.changelog = {
+        url: data.changelog[0],
+        selector: data.changelog[1],
+        attr: data.changelog[2],
+        match: data.changelog[3],
+        split: data.changelog[4]
       }
-    } else if (data.download instanceof Function) {
-      data.download = { func: data.download }
-    } else if (data.download instanceof Array) {
-      if (typeof data.download[0] === 'string') {
-        if (data.download[0].match(/^https?:/i)) {
-          data.download = {
-            plain: data.download[0],
-            output: data.download[1]
-          }
-        } else {
-          data.download = {
-            selector: data.download[0],
-            attr: data.download[1],
-            match: data.download[2],
-            output: data.download[3]
-          }
+    } else if (typeof data.changelog[0] === 'function') {
+      data.changelog = {
+        func: data.changelog[0]
+      }
+    }
+  }
+
+  if (data.download && valid(data.download)) {
+    data.download = [].concat(data.download)
+    if (typeof data.download[0] === 'string') {
+      if (data.download[0].match(/^https?:/i)) {
+        data.download = {
+          plain: data.download[0],
+          output: data.download[1]
         }
       } else {
         data.download = {
-          func: data.download[0],
-          output: data.download[1]
+          selector: data.download[0],
+          attr: data.download[1],
+          match: data.download[2],
+          output: data.download[3]
         }
       }
+    } else if (typeof data.download[0] === 'function') {
+      data.download = {
+        func: data.download[0],
+        output: data.download[1]
+      }
+    }
+  }
+
+  if (data.install && (typeof data.install === 'string' || data.install instanceof Array)) {
+    data.install = [].concat(data.install)
+    if (require(`./js/${data.install[0]}`)) {
+      let func = require(`./js/${data.install[0]}`)
+      let args = data.install.slice(1)
+      data.install = info => func(info, ...args)
+    } else {
+      delete data.install
     }
   }
 
   return data
+}
+
+function getPath (cmd) {
+  return cp.spawnSync('cmd', ['/c', `echo "${cmd}"`], {
+    env: Object.assign({}, process.env, {
+      'ProgramFiles(x86)': process.env['ProgramFiles(x86)'] || process.env['ProgramFiles']
+    })
+  }).output[1].toString().trim().match(/^\\"(.*)\\"$/)[1]
 }
 
 // Main-version
@@ -713,7 +617,7 @@ async function getLatestVersion (i) {
   let res = await req(software[i].url, { useProxy: software[i].useProxy })
   let returnValue
 
-  if (res && (res.statusMessage === 'OK' || res.statusCode >= 200 || res.statusCode < 300)) {
+  if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
     returnValue = await (async function () {
       let $ = cheerio.load(res.body)
       if (_.debug) {
@@ -722,56 +626,72 @@ async function getLatestVersion (i) {
         fse.writeFileSync(`debug/${iEscaped}.html`, res.body)
         fse.writeJsonSync(`debug/${iEscaped}.json`, res, {
           spaces: 2,
-          replacer: function replacer (key, value) {
-            if (key === 'body') return undefined
-            return value
-          }
+          replacer: (key, value) => key === 'body' ? undefined : value
         })
       }
 
+      if ($('title').text().trim()) console.debug(`Title:\t${$('title').text().trim()}`)
+
       let version
       if ('selector' in software[i].version) {
-        version = $(software[i].version.selector)
+        try {
+          version = $(software[i].version.selector)
+        } catch (error) {
+          console.error(`Error:\tSelector "${software[i].version.selector}" Invalid when "version"`)
+          return false
+        }
+
         if (version.length === 0) {
-          console.error(`Error:\tCan't get the element when get version\nSelector:\t${software[i].version.selector}`)
+          console.error(`Error:\tSelector "${software[i].version.selector}" Nothing when "version"`)
           return null
         }
 
         version = version.eq(0)
-        if (!('attr' in software[i].version)) software[i].version.attr = 'text'
-        version = software[i].version.attr === 'text' ? version.text() : software[i].version.attr === 'html' ? version.html() : version.attr(software[i].version.attr)
+        version = (software[i].version.attr === 'text' || !software[i].version.attr) ? version.text() : software[i].version.attr === 'html' ? $.html(version) : version.attr(software[i].version.attr)
         version = version.trim()
         if (version === '') {
-          console.error(`Error:\tThe attribute of the element is empty when get version`)
+          console.error(`Error:\tAttribute "${software[i].version.attr}" Empty when "version"`)
           return null
         }
+        console.debug({ version })
         let regexp = software[i].version.match || /(\d+[\d.]+\d+)/
         let matched = version.match(regexp)
         if (!matched) {
-          console.error(`Error:\tCan't match the RegExp of the Text when get version\nText:\t${version}\nRegExp:\t${regexp}`)
+          console.error(`Error:\tRegExp "${regexp}" Dont Match Text "${version}" when "version"`)
           return null
         }
 
-        version = matched.length > 1 ? matched[1] : matched[0]
+        if (software[i].version.replace) {
+          version = matched[0].replace(regexp, software[i].version.replace)
+        } else {
+          version = matched.length > 1 ? matched[1] : matched[0]
+        }
       } else if ('func' in software[i].version) {
         try {
           version = await software[i].version.func(res, $, fns, software[i].versionChoice)
           if (!version) {
-            console.error(`Error:\t"func" return nothing when get version`)
+            console.error(`Error:\t"func" return nothing when "version"`)
             return null
           }
           if (version instanceof Array) version = version.length ? version[1] : version[0]
         } catch (error) {
-          console.error(error)
+          console.error(`Error:\t${util.format(error)}`)
           return null
         }
       } else {
         console.error(`Error:\tNo "selector"/"func" in "version"`)
         return null
       }
-      version = version.replace(/[\\/:*?"<>|]/g, '-').trim()
+      if (version.match(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i)) console.debug(`Version-Raw:\t${version}`)
+      version = version.replace(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i, '$1.$4').replace(/[\\/:*?"<>|]/g, '-').trim()
       return { version, res, $ }
     })()
+  } else {
+    if (res) {
+      console.error(`Error:\t${res.statusCode} ${res.statusMessage}`)
+    } else {
+      console.error(`Error:\tRequest return nothing`)
+    }
   }
 
   return returnValue
@@ -821,6 +741,114 @@ function versionMax (v1, v2) {
     }
   }
   return arr1.length > arr2.length
+}
+
+// Main-changelog
+async function getLatestVersionChangelog (i, versionLatest, res, $) {
+  if (software[i].changelog.url) {
+    let url
+    if (!software[i].changelog.url.match(/^https?:/i)) {
+      url = $(software[i].changelog.url).eq(0).attr('href')
+      if (!url) return
+    } else {
+      url = software[i].changelog.url
+    }
+
+    url = replace(url)
+    res = await req(url, { useProxy: software[i].useProxy })
+
+    if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
+      $ = cheerio.load(res.body)
+      if ($('title').text().trim()) console.debug(`Title:\t${$('title').text().trim()}`)
+    } else {
+      if (res) {
+        console.error(`Error:\t${res.statusCode} ${res.statusMessage}`)
+      } else {
+        console.error(`Error:\tRequest return nothing`)
+      }
+      return
+    }
+  }
+
+  let html2TextConfig = {
+    tables: true,
+    wordwrap: false,
+    // linkHrefBaseUrl: res.request.uri.href,
+    ignoreImage: true,
+    // preserveNewlines: true,
+    uppercaseHeadings: false,
+    format: {
+      heading: function (elem, fn, options) {
+        var h = fn(elem.children, options)
+        return `\n\n${color.Bright + color.Reverse}${h}${color.Reset}\n`
+      },
+      horizontalLine: () => '\n' + '-'.repeat(80) + '\n\n'
+    },
+    unorderedListItemPrefix: '├─ ' // https://en.wikipedia.org/wiki/Box-drawing_character
+  }
+  if (software[i].changelog.split) html2TextConfig.format = null
+
+  let changelog
+  if ('func' in software[i].changelog) {
+    try {
+      let convert
+      changelog = await software[i].changelog.func(res, $, fns)
+      changelog = [].concat(changelog)
+      ;[changelog, convert] = changelog
+      if (convert) changelog = html2Text.fromString(changelog, html2TextConfig)
+      return changelog
+    } catch (error) {
+      console.error(`Error:\t${util.format(error)}`)
+      return null
+    }
+  } else {
+    if (software[i].changelog.split) {
+      software[i].changelog.selector = software[i].changelog.selector || 'body'
+      software[i].changelog.attr = software[i].changelog.attr || 'html'
+      software[i].changelog.match = software[i].changelog.match || /^\s*[\d.]+/
+    }
+
+    if (res.headers['content-type'].match(/^(text\/plain|text\/markdown|application\/octet-stream)/) && software[i].changelog.selector === 'body' && software[i].changelog.attr === 'html') {
+      changelog = res.body
+    } else {
+      if (software[i].changelog.selector === 'body' && software[i].changelog.attr === 'html') console.debug(res.headers['content-type'])
+
+      try {
+        changelog = $(software[i].changelog.selector)
+      } catch (error) {
+        console.debug(`Error:\tSelector "${software[i].changelog.selector}" Invalid when "changelog"`)
+        return false
+      }
+
+      if (changelog.length === 0) {
+        console.debug(`Error:\tSelector "${software[i].changelog.selector}" Nothing when "changelog"`)
+        return null
+      }
+
+      changelog = changelog.eq(0)
+      changelog = (software[i].changelog.attr === 'text' || !software[i].changelog.attr) ? html2Text.fromString($.html(changelog), html2TextConfig) : software[i].changelog.attr === 'html' ? $.html(changelog) : changelog.attr(software[i].changelog.attr)
+      if (!changelog || changelog.trim() === '') {
+        console.debug(`Error:\tAttribute "${software[i].changelog.attr}" Empty when "changelog"`)
+        return null
+      }
+      changelog = changelog.replace(new RegExp(`\n${html2TextConfig.unorderedListItemPrefix}\n`, 'g'), '\n')
+    }
+
+    if (software[i].changelog.split) {
+      let lineArr = changelog.replace(/[\u0000\r]/g, '').trim().split(/\n/)
+      let split = lineArr.filter(line => line.match(software[i].changelog.match))
+      console.debug({ lineArr, split })
+      let start = lineArr.indexOf(split[0])
+      if (start === -1) return null
+      let end = lineArr.indexOf(split[1])
+      end = end === -1 ? lineArr.length : end
+      changelog = lineArr.slice(start, end).join('\n')
+    } else {
+      if (software[i].changelog.match) changelog = changelog.match(software[i].download.match)[1]
+    }
+  }
+  // if (changelog) fse.moveSync(`software/${i}.js`, `software-ok/${i}.js`)
+  return changelog
 }
 
 // Main-download
@@ -922,7 +950,7 @@ async function downloadFile (uri, i, target) {
       req.abort()
       clearInterval(intervalId)
       _.request.proxy = requestProxy
-      console.error(`Try ${software[i].retry}:\t${error.message}`)
+      console.error(`Try-${software[i].retry}:\t${error.message}`)
       if (_.download.retry > software[i].retry) {
         await new Promise((resolve, reject) => {
           setTimeout(() => {
@@ -1026,31 +1054,27 @@ function getExt (uri) {
 
 async function downloadLatestVersion (i, versionLatest, res, $) {
   let iEscaped = i.replace(/[:*?"<>|]/g, '-')
-  let download
+  let download, ext, matched
 
   if ('plain' in software[i].download) { // download url is regular
-    replace.init({
-      version: versionLatest
-    })
     download = replace(software[i].download.plain)
   } else if ('selector' in software[i].download) { // can get download from html
     try {
       download = $(software[i].download.selector)
     } catch (error) {
-      console.error(`Error:\tSelector Invalid when get download url\nSelector:\t${software[i].download.selector}`)
+      console.error(`Error:\tSelector "${software[i].download.selector}" Invalid when "download"`)
       return false
     }
 
     if (download.length === 0) {
-      console.error(`Error:\tCan't get the element when get download url\nSelector:\t${software[i].download.selector}`)
+      console.error(`Error:\tSelector "${software[i].download.selector}" Nothing when "download"`)
       return null
     }
 
     download = download.eq(0)
-    if (!('attr' in software[i].download)) software[i].download.attr = 'href'
-    download = software[i].download.attr === 'text' ? download.text() : software[i].download.attr === 'html' ? download.html() : download.attr(software[i].download.attr)
+    download = software[i].download.attr === 'text' ? download.text() : software[i].download.attr === 'html' ? $.html(download) : download.attr(software[i].download.attr || 'href')
     if (!download || download.trim() === '') {
-      console.error(`Error:\tThe attribute of the element is empty when get download url`)
+      console.error(`Error:\tAttribute "${software[i].download.attr}" Empty when "download"`)
       return null
     }
 
@@ -1058,12 +1082,14 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   } else if ('func' in software[i].download) {
     try {
       download = await software[i].download.func(res, $, fns, software[i].downloadChoice)
+      download = [].concat(download)
+      ;[download, ext] = download
       if (!download) {
-        console.error(`Error:\t"func" return nothing when get download`)
+        console.error(`Error:\t"func" return nothing when "download"`)
         return null
       }
     } catch (error) {
-      console.error(error)
+      console.error(`Error:\t${util.format(error)}`)
       return null
     }
   } else {
@@ -1073,8 +1099,8 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
 
   download = url.resolve(res.request.uri.href, download)
 
-  let ext, matched
-  if (software[i].download.output) {
+  if (ext) {
+  } else if (software[i].download.output) {
     ext = software[i].download.output
   } else if ((matched = getExt(download))) {
     ext = matched
@@ -1083,7 +1109,7 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
     let res1 = await reqHEAD(download, { useProxy: software[i].useProxy, withoutHeader: software[i].withoutHeader })
 
     if (!res1) {
-      console.error(`Error:\tCan't Access ${download}`)
+      console.error(`Error:\tCan't Access "${download}"`)
       console.error(`Error:\tCan't get Extension name, please set "output" in "download"`)
       return null
     } else if ((matched = getExt(res1.request.uri.pathname))) {
@@ -1104,8 +1130,8 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   console.log(`Download:\t${download}`)
   console.log(`Output:\t${output}`)
 
-  if (JSON.parse(JSON.stringify(cookies))._jar.cookies.length) {
-    fse.writeFileSync('cookies.txt', JSON.parse(JSON.stringify(cookies))._jar.cookies.map(i => [`.${i.domain}`, i.hostOnly ? 'TRUE' : 'FALSE', i.path, i.secure ? 'TRUE' : 'FALSE', i.expires ? Math.round(new Date(i.expires).getTime() / 1000) : '0', i.key, i.value].join('\t')).join('\r\n'))
+  if (JSON.parse(JSON.stringify(req.config.get('cookies')))._jar.cookies.length) {
+    fse.writeFileSync('cookies.txt', JSON.parse(JSON.stringify(req.config.get('cookies')))._jar.cookies.map(i => [`.${i.domain}`, i.hostOnly ? 'TRUE' : 'FALSE', i.path, i.secure ? 'TRUE' : 'FALSE', i.expires ? Math.round(new Date(i.expires).getTime() / 1000) : '0', i.key, i.value].join('\t')).join('\r\n'))
   }
 
   if (['test'].includes(mode)) return null
@@ -1116,10 +1142,12 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   let _prxoy = _.download.proxy
   let _withProxyRule = _.urlWithProxy.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter))
   let _withProxyMode = _.useProxy === 2 || (_.useProxy === 1 && software[i].useProxy)
-  let _withProxyAuto = proxyList[url.parse(download).hostname] || proxyList[url.parse(software[i].url).hostname]
+  let _withProxyAuto = req.config.get('proxyList')[url.parse(download).hostname] || req.config.get('proxyList')[url.parse(software[i].url).hostname]
   let _withProxy = _withProxyRule || _withProxyMode || _withProxyAuto
   let _withoutProxy = _.urlWithoutProxy.some(urlfilter => download.match(urlfilter))
-  let _useProxy = _prxoy && _withProxy && !_withoutProxy
+  let _withProxyForce = _.urlWithProxyForce.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter))
+  let _withoutProxyForce = _.urlWithoutProxyForce.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter))
+  let _useProxy = _prxoy && (_withProxyForce || (_withProxy && !_withoutProxy)) && !_withoutProxyForce
 
   console.log()
   if (_.download.method === 'request') {
@@ -1194,8 +1222,7 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   console.log()
 
   if (end === 'error') {
-    console.error(`Software:\t${i}`)
-    console.error('Error: Download new version Error')
+    console.error('Error:\tDownload new version Error')
     if (['test-download', 'test-install'].includes(mode)) {
       // go-on
     } else if (readlineSync.keyInYNStrict(`Open:\t${download}`)) cp.execSync(`start "" "${download}"`)
@@ -1224,7 +1251,7 @@ async function virusCheckFile (file) {
   if (!res.statusCode || !res.body) return virusCheckFile(file)
   if (res.body.response_code === -2) return 'Scaning'
   if (res.body.response_code === 0 && _.virus.upload) {
-    console.log('Note:\tYour file is uploading to scan')
+    console.log('Notice:\tYour file is uploading to scan')
     res = await req({
       uri: 'https://www.virustotal.com/vtapi/v2/file/scan',
       method: 'POST',
@@ -1271,39 +1298,79 @@ async function virusCheckFile (file) {
 
 // Main-install
 
-async function installLatestVersion (i, output, iPath) {
+async function installLatestVersion (i, output) {
+  let info = {
+    i: i,
+    name: i.replace(/[:*?"<>|]/g, '-').replace(/\//g, '\\'),
+    path: software[i].path,
+    parentPath: software[i].parentPath,
+    output: output,
+
+    fns: fns,
+    config: _,
+    choice: software[i].installChoice,
+    other: software[i]
+  }
+
   if (software[i].fixedPath) {
     if (!_.ignoreWarn.fixedPath && !readlineSync.keyInYNStrict(`Continue to install?`)) return false
-    let dirname = path.dirname(iPath)
-    if (!fse.existsSync(dirname)) {
+    if (!fse.existsSync(software[i].parentPath)) {
       try {
-        fse.mkdirsSync(dirname)
+        fse.mkdirsSync(software[i].parentPath)
       } catch (error) {
-        console.error(`Error:\tCan't Create Directory\nMessage:\t${error.message}`)
+        console.error(`Error:\tCan't Create Directory "${software[i].parentPath}"`)
         return false
       }
     }
   }
 
-  if (!_.ignoreWarn.preferPath && software[i].preferPath && iPath.toLowerCase().substr(-software[i].preferPath.length).replace(/\\/g, '/') !== software[i].preferPath.toLowerCase()) {
-    console.warn(`Warn:\tThe path you given don't have preferred\nTarget:\t${iPath}\nPreferPath:\t${software[i].preferPath}`)
+  if (!_.ignoreWarn.preferPath && software[i].preferPath && software[i].path.toLowerCase().substr(-software[i].preferPath.length).replace(/\\/g, '/') !== software[i].preferPath.toLowerCase()) {
+    console.warn(`Warn:\tTarget "${software[i].path}" Not Match preferPath "${software[i].preferPath}"`)
     if (!readlineSync.keyInYNStrict('Continue to install?')) return false
   }
 
-  if ('beforeInstall' in software[i]) await software[i].beforeInstall(output, iPath, fns, software[i].installChoice)
-  if (_.specialMode[i] === 3 || (!software[i].commercial && _.mode === 3) || (software[i].commercial && _.commercialMode === 3)) {
-    if (software[i].install.toString().match(/install_single/)) {
-      fse.removeSync(iPath)
+  let result
+
+  if (software[i].beforeInstall && software[i].beforeInstall instanceof Function) result = await software[i].beforeInstall(info)
+  if (result === false) return false
+
+  if (_.backupOldVersion && fse.existsSync(software[i].parentPath)) {
+    let from = software[i].parentPath
+    let version = database[i].version || await getVersion(software[i].path)
+    let to = `${from}.old\\${version}`
+    if (!fse.existsSync(`${from}.old`)) {
+      try {
+        fse.mkdirsSync(`${from}.old`)
+      } catch (error) {
+        console.error(`Error:\tCan't Create Directory "${from}.old"`)
+      }
+    }
+    if (fse.statSync(`${from}.old`).isDirectory()) {
+      console.log(`Backup:\t${to}`)
+      if (_.backupOldVersion === 1) { // move
+        fse.copySync(from, to)
+      } else if (_.backupOldVersion === 2) { // archive
+        to = `${to}.7z`
+        cp.execSync(`plugins\\7z.exe a -mx9 -sccUTF-8 "${to}" "${from}"`)
+      }
     } else {
-      fse.removeSync(path.parse(iPath).dir)
+      console.error(`Error:\tCan't Backup to "${to}"`)
     }
   }
-  let installed = await software[i].install(output, iPath, fns, software[i].installChoice)
+
+  if (_.specialMode[i] === 3 || (!software[i].commercial && _.mode === 3) || (software[i].commercial && _.commercialMode === 3)) {
+    if (software[i].install.toString().match(/install_(|\w+_)single/)) {
+      fse.removeSync(software[i].path)
+    } else {
+      fse.removeSync(software[i].parentPath)
+    }
+  }
+  let installed = await software[i].install(info)
   if (installed) {
-    if ('afterInstall' in software[i]) await software[i].afterInstall(output, iPath, fns, software[i].installChoice)
+    if (software[i].afterInstall && software[i].afterInstall instanceof Function) await software[i].afterInstall(info)
     if (!_.preserveArchive) fse.removeSync(output)
   } else {
-    console.error(`Software:\t${i}\nError:\tSkipped\nLocation:\t${output}\nTarget:\t${iPath}`)
+    console.error(`Error:\tSkipped`)
   }
   return installed
 }
@@ -1313,11 +1380,11 @@ async function installLatestVersion (i, output, iPath) {
 function doBeforeExit () {
   if (_.debug) {
     let cookiesRaw = fse.existsSync('cookies.json') ? fse.readJSONSync('cookies.json') : {}
-    let cookiesNew = JSON.parse(JSON.stringify(cookies))._jar.cookies
+    let cookiesNew = JSON.parse(JSON.stringify(req.config.get('cookies')))._jar.cookies
     cookiesNew = cookiesNew.concat(cookiesRaw).filter((item, index, array) => array.indexOf(array.filter(item2 => item2.key === item.key && item2.domain === item.domain && item2.path === item.path)[0]) === index)
     fse.writeJSONSync('cookies.json', cookiesNew, { spaces: 2 })
   } else {
-    cookies = request.jar()
+    req.config.set('cookies', request.jar())
   }
   if (fse.existsSync('cookies.txt')) fse.removeSync('cookies.txt')
   if (['default', 'filter', 'check', 'install'].includes(mode)) fse.writeFileSync(databaseFile, JSON.stringify(database, null, 2))
@@ -1332,7 +1399,7 @@ async function init () {
   if (['--makemd'].some(i => args.includes(i))) return
 
   if (!fse.existsSync('./plugins')) {
-    console.log('Error:\tNo Plugins, Please Download And Extract to "plugins"')
+    console.error('Error:\tNo Plugins, Please Download And Extract to "plugins"')
     if (readlineSync.keyInYNStrict(`Open ${releasePage}`)) cp.execSync(`start "" "${releasePage}"`)
   } else {
     let list = fse.readdirSync('./plugins')
@@ -1343,9 +1410,8 @@ async function init () {
     ].filter(i => !list.includes(i))
     // let downloadTool = ['aria2c.exe', 'wget.exe', 'curl.exe'].filter(i => list.includes(i))
     if (notExists.length) { //  || !downloadTool
-      console.log('Error:\t"plugins" exists, but some file needed not')
+      console.error('Error:\t"plugins" exists, but some file needed not')
       if (readlineSync.keyInYNStrict(`Open ${releasePage}`)) cp.execSync(`start "" "${releasePage}"`)
-      return
     }
   }
 
@@ -1383,7 +1449,7 @@ async function init () {
         if (!fse.existsSync('generate')) fse.mkdirSync('generate')
         let filepath = path.resolve('./generate/', selected.name + '.js')
         fse.writeFileSync(filepath, selected.text)
-        console.log(`Location:\t${filepath}\nInfo:\tFile Generated, you should move it to "software" manually`)
+        console.log(`Notice:\tFile Generated "${filepath}", move it to "software" manually`)
       }
     }
   }
@@ -1402,7 +1468,7 @@ async function init () {
     } else if (software[i].site && Object.keys(software[i].site).length) {
       // go-on
     } else {
-      console.error(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}\nError:\tNo Enough Info`)
+      console.error(`Error:\tNo Enough Info "${path.join(__dirname, 'software', iRaw + '.js')}"`)
       continue
     }
 
@@ -1422,15 +1488,58 @@ async function init () {
     // 扩展为标准格式
     software[i] = ExtendSoftware(software[i])
 
+    if (software[i].fixedPath instanceof Array) {
+      let pathes = software[i].fixedPath
+      let folder = getPath(pathes[0])
+      for (let o = 1; o < pathes.length; o++) {
+        if (!fse.existsSync(folder) || !fse.statSync(folder).isDirectory()) break
+
+        if (typeof pathes[o] === 'string') {
+          folder = path.resolve(folder, pathes[o])
+          continue
+        }
+
+        let files = fse.readdirSync(folder)
+        if (pathes[o] instanceof RegExp) {
+          files = files.filter(i => i.match(pathes[o]))
+        } else {
+          break
+        }
+
+        if (o === pathes.length - 1) {
+          files = files.filter(i => fse.statSync(path.resolve(folder, i)).isFile())
+        } else {
+          files = files.filter(i => fse.statSync(path.resolve(folder, i)).isDirectory())
+        }
+        if (files.length === 0) break
+        folder = path.resolve(folder, files[0])
+      }
+      software[i].fixedPath = folder
+    }
+
     if (!(i in database)) database[i] = {}
-    if (['test-install'].includes(mode) && !_.software[i]) _.software[i] = path.resolve(_.rootPath, iEscaped, software[i].preferPath || path.basename(iEscaped) + '.exe')
-    let iPath = path.resolve(_.rootPath, _.software[i] || '')
-    if (software[i].fixedPath) {
-      iPath = software[i].fixedPath = cp.spawnSync('cmd', ['/c', `echo ${software[i].fixedPath}`], {
-        env: Object.assign({}, process.env, {
-          'ProgramFiles(x86)': process.env['ProgramFiles(x86)'] || process.env['ProgramFiles']
-        })
-      }).output[1].toString().trim()
+    if (['test-install'].includes(mode) && !_.software[i]) {
+      _.software[i] = path.resolve(_.rootPath, iEscaped, software[i].preferPath || path.basename(iEscaped) + '.exe')
+    }
+    _.software[i] = (software[i].fixedPath || _.software[i]) ? getPath(software[i].fixedPath || _.software[i]) : ''
+    let iPath = path.resolve(_.rootPath, _.software[i])
+    if (iPath.match(/\|/)) {
+      software[i].parentPath = iPath.split(/\|/)[0]
+      iPath = iPath.replace(/\|/g, '\\')
+    } else {
+      let parentPath = path.dirname(iPath)
+      while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
+        parentPath = path.parse(parentPath).dir
+      }
+      software[i].parentPath = parentPath
+    }
+    software[i].path = iPath
+
+    if (_.openInstaller && !software[i].install) {
+      software[i].install = info => {
+        console.log(`Install-Path:\t${info.parentPath}`)
+        return info.fns.install.cli(info, null, [], { wait: true })
+      }
     }
 
     let isModeDefault = mode === 'default' && args.length === 0
@@ -1445,7 +1554,7 @@ async function init () {
     if (['test', 'test-download', 'test-install', 'check', 'backup'].includes(mode) || !fse.existsSync(iPath)) {
       version = null
     } else if ('version' in database[i]) {
-      if (software[i].noMd5 || database[i].md5 === getHash(iPath, 'md5')) {
+      if (database[i].md5 === getHash(iPath, 'md5')) {
         version = database[i].version
       } else {
         version = versionLocal
@@ -1460,18 +1569,18 @@ async function init () {
     if (['test', 'test-download', 'test-install'].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}`)
     console.log(`Location:\t${iPath}`)
     console.log(`Version:\t${version}`)
-    // if (software[i].url) console.log(`Url:\t${software[i].url}`)
 
+    // install mode
     if (['install'].includes(mode) && 'install' in software[i]) {
       if (fse.existsSync(iPath) && !versionMax(database[i].version, versionLocal)) continue
       let name = `${iEscaped}-${database[i].version}`
       let filter = fse.readdirSync(_.archivePath).filter(j => path.parse(j).name === name)
       if (filter.length === 0) {
-        console.error(`Output:\t${name}\nError:\tOutput is not found`)
+        console.error(`Error:\tOutput "${name}" is not found`)
         continue
       }
       let output = path.resolve(_.archivePath, filter[0])
-      await installLatestVersion(i, output, iPath)
+      await installLatestVersion(i, output)
       continue
     }
 
@@ -1485,11 +1594,13 @@ async function init () {
       software[i].url = software[i].site[siteNow]
 
       let info = require('./templates/' + siteNow)
-      let preserve = ['useProxy', 'withoutHeader', 'version', 'download']
+      info = ExtendSoftware(info)
+      let preserve = ['useProxy', 'withoutHeader', 'version', 'changelog']
       for (let key of preserve) {
         software[i][key] = info[key] || software[i][key]
       }
-      // console.log(`Site ${siteNow}:\t${software[i].url}`)
+      if (info.download && (software[i].download === undefined || !software[i].download.plain)) software[i].download = info.download
+      console.log(`Site:\t${siteNow}`)
     }
     result = await getLatestVersion(i)
     while (!result && siteList.length) {
@@ -1500,11 +1611,13 @@ async function init () {
         software[i].url = software[i].site[siteNow]
 
         let info = require('./templates/' + siteNow)
-        let preserve = ['useProxy', 'withoutHeader', 'version', 'download']
+        info = ExtendSoftware(info)
+        let preserve = ['useProxy', 'withoutHeader', 'version', 'changelog']
         for (let key of preserve) {
           software[i][key] = info[key] || software[i][key]
         }
-        // console.log(`Site ${siteNow}:\t${software[i].url}`)
+        if (info.download && (software[i].download === undefined || !software[i].download.plain)) software[i].download = info.download
+        console.log(`Site:\t${siteNow}`)
         result = await getLatestVersion(i)
       }
     }
@@ -1512,20 +1625,27 @@ async function init () {
     let { version: versionLatest, res, $ } = result
 
     database[i].lasttime = getNow()
-    console.log(`Latest Version:\t${versionLatest}`)
+    console.log(`Latest-Version:\t${versionLatest}`)
 
     if (['check'].includes(mode)) {
       database[i].md5 = getHash(iPath, 'md5')
       database[i].version = versionLatest
       continue
     } else if (version === null || versionMax(versionLatest, version)) { // new version
-      // go-on
+      replace.init({
+        version: versionLatest
+      })
     } else { // no new version
       if (_.saveVersion) {
         database[i].md5 = getHash(iPath, 'md5')
         database[i].version = versionLatest
       }
       continue
+    }
+
+    if (software[i].changelog) {
+      let changelog = await getLatestVersionChangelog(i, versionLatest, res, $)
+      if (changelog && typeof changelog === 'string') console.log(`Changelog:\t${changelog.replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim()}`)
     }
 
     if (['default', 'filter'].includes(mode)) {
@@ -1571,7 +1691,7 @@ async function init () {
     } else if (['backup'].includes(mode)) {
       continue
     } else { // open url
-      if (software[i].commercial) console.warn('Info:\tCommercial Software')
+      if (software[i].commercial) console.warn('Notice:\tCommercial Software')
       if (readlineSync.keyInYNStrict(`Open:\t${software[i].url}`)) cp.execSync(`start "" "${software[i].url}"`)
       continue
     }
@@ -1592,7 +1712,7 @@ async function init () {
     } else if (['test-install'].includes(mode) && !('install' in software[i])) {
       continue
     } else {
-      console.warn(`Warn:\tYou should install it yourself.\nTarget:\t${iPath}\nOutput:\t${output}`)
+      console.warn(`Warn:\tYou should install it yourself.`)
       if (!_.ignoreWarn.mode1 && readlineSync.keyInYNStrict(`Show:\t${output}`)) cp.execSync(`start "" "explorer" /select,"${output}"`)
       continue
     }
@@ -1605,12 +1725,12 @@ async function init () {
       safe = true
     }
     if (!safe || typeof safe === 'string') {
-      console.error(`Software:\t${i}\nError:\tSkipped\nReason:\t${'Not Safe' || safe}\nLocation:\t${output}\nTarget:\t${iPath}`)
+      console.error(`Error:\tSkipped "${safe || 'Not Safe'}"`)
       continue
     }
 
     // install
-    let installed = await installLatestVersion(i, output, iPath)
+    let installed = await installLatestVersion(i, output)
     if (installed) database[i].lastupdatetime = getNow()
     if (installed && _.saveVersion) {
       database[i].md5 = getHash(iPath, 'md5')
@@ -1625,10 +1745,10 @@ init().then(result => {
   doBeforeExit()
 
   if (result) console.log('\n- - - - - - - - - - -\n')
-}, (err) => {
+}, (error) => {
   doBeforeExit()
 
+  console.error(error)
   console.log('\n- - - - - - - - - - -\n')
-  console.error('Error: ', err.message, '\n ', err.stack.replace(/[\r\n]/g, '{\\n}').match(/{\\n}\s+(at\s+.*)/m)[1].replace(/{\\n}\s+/g, '\n  '))
-  process.exit(err)
+  process.exit()
 })

@@ -19,7 +19,10 @@ let copy = function (from, to, excludes) {
       let relativePath = path.relative(from, src)
 
       if (includes.some(i => relativePath.match(i))) return true
-      if (excludes.some(i => relativePath.match(i))) return false
+      if (excludes.some(i => relativePath.match(i))) {
+        console.log(`Excluded File:\t${relativePath}`)
+        return false
+      }
 
       return true
     }

@@ -3,25 +3,19 @@
 /**
  * @description regard the install pack as Inno Setup and contains 64 and 32 bit file
  * @returns {boolean} if install completed
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} info
  * @param {(string | array)} excludes what files you don't want to install
  * @param {string | object} preserveType
  * @param {object} toDirUserDefined
  */
 
-let install = async (from, to, excludes = undefined, preserveType = undefined, toDirUserDefined = {}) => {
+let install = async (info, excludes = undefined, preserveType = undefined, toDirUserDefined = {}) => {
   const path = require('path')
   const fse = require('fs-extra')
 
-  let { dir: parentPath } = path.parse(to)
-  while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-    parentPath = path.parse(parentPath).dir
-  }
-
-  let installed = require('./../js/install_inno')(from, to, null, toDirUserDefined)
+  let installed = require('./../js/install_inno')(info, excludes, toDirUserDefined)
   if (installed) {
-    let list = require('./walk')(parentPath)
+    let list = require('./walk')(info.parentPath)
     list = list.filter(i => path.parse(i).name.match(/,\d+$/))
 
     if (!preserveType) preserveType = require('os').arch() === 'x64' ? '2' : '1'
@@ -36,7 +30,7 @@ let install = async (from, to, excludes = undefined, preserveType = undefined, t
         preferType = preserveType[name] || preserveType['default']
       }
       let base = `${name},${type}${ext}`
-      if (type === preferType) {
+      if (type === preferType.toString()) {
         fse.renameSync(i, path.join(dir, name + ext))
         console.log(`Rename:\t${base} ==> ${name + ext}`)
       } else {

@@ -30,6 +30,7 @@
   extract and move **software** to under **softwareUpdateManager**
 4. Download **plugins.7z** from [here](https://github.com/dodying/softwareUpdateManager/releases/tag/plugins), and extract to **plugins**
 5. Copy **config.default.js**, modify and save as **config.js**
+6. `node index.js`
 
 ##### Other
 
@@ -39,7 +40,7 @@
 4. 代理优先级(前提是设置了代理): `config.urlWithoutProxy > config.urlWithProxy > config.useProxy > software.useProxy`
 5. 模式优先级: `config.specialMode > config.mode = config.commercialSoftware`
 6. 安装方法并没有一一测试, 如果自动安装失败, 请尝试手动安装
-
+7. 如果你想安装同个软件到多个地方，请在`config.js`中编辑`profile`，并使用`node index --profile`
 
 #### Command-Line
 
@@ -121,7 +122,7 @@
 
 #### Software Example
 
-Refer to [Telegram](software/Telegram.js)
+Refer to [Vivaldi](software/Vivaldi.js)
 
 #### Supported Search Site
 

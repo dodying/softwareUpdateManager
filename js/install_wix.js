@@ -3,15 +3,14 @@
 /**
  * @description regard the install pack as a Windows Installer XML
  * @returns {boolean} if install completed
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} info
  * @param {(string | array)} excludes what files you don't want to install
  * @param {(string | RegExp)} installMsi what msi you want to install (with .msi) // String: 完全相等, RegExp: 匹配即可
  * @param {string} preferPath
  * @param {(string | array)} msiParams
  */
 
-let install = async (from, to, excludes, installMsi, preferPath, msiParams) => {
+let install = async (info, excludes, installMsi, preferPath, msiParams) => {
   excludes = excludes ? [].concat(excludes) : []
   excludes.push('.msi$')
 
@@ -20,14 +19,9 @@ let install = async (from, to, excludes, installMsi, preferPath, msiParams) => {
   const cp = require('child_process')
 
   let install = () => {
-    let { dir: parentPath, name } = path.parse(to)
-    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-      parentPath = path.parse(parentPath).dir
-    }
+    cp.execSync(`plugins\\dark.exe "${info.output}" -x ".\\unzip\\${info.name}"`)
 
-    cp.execSync(`plugins\\dark.exe "${from}" -x ".\\unzip\\${name}"`)
-
-    let fromNew = `unzip\\${name}\\AttachedContainer`
+    let fromNew = `unzip\\${info.name}\\AttachedContainer`
     let list = fse.readdirSync(fromNew)
     while (list.length === 1) {
       fromNew = path.resolve(fromNew, list[0])
@@ -41,7 +35,8 @@ let install = async (from, to, excludes, installMsi, preferPath, msiParams) => {
     for (let file of list) {
       let _path = path.resolve('./', fromNew, file)
       if ((typeof installMsi === 'string' && file === installMsi) || (installMsi instanceof RegExp && file.match(installMsi))) {
-        return require('./install_msi')(_path, to, excludes, preferPath, msiParams)
+        info.output = _path
+        return require('./install_msi')(info, excludes, preferPath, msiParams)
       } else {
         continue
       }
@@ -50,7 +45,7 @@ let install = async (from, to, excludes, installMsi, preferPath, msiParams) => {
     return false
   }
 
-  let killed = require('./kill')(from, to)
+  let killed = require('./kill')(info.parentPath)
   if (!killed) return false
 
   try {

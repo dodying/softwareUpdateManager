@@ -3,27 +3,26 @@
 /**
  * @description regard the install pack as Windows Installer Package
  * @returns {boolean} if install completed
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} info
  * @param {(string | array)} excludes what files you don't want to install
  * @param {string} preferPath
  * @param {(string | array)} msiParams
  */
 
-let install = async (from, to, excludes = [], preferPath, msiParams) => {
+let install = async (info, excludes = [], preferPath, msiParams) => {
   let install = () => {
     const fse = require('fs-extra')
     const path = require('path')
     const replace = require('./replaceWithDict')
 
-    let { dir: parentPath, name } = path.parse(to)
-
     excludes = [].concat(excludes, '.msi$')
-    msiParams = [].concat(msiParams).filter(i => i).map(i => replace(i, { dir: parentPath }))
+    msiParams = [].concat(msiParams).filter(i => i).map(i => replace(i, { dir: info.parentPath }))
 
-    require('child_process').execSync(`start /wait msiexec /a "${from}" /passive /qr /norestart TARGETDIR="${path.parse(__dirname).dir}\\unzip\\${name}" ${msiParams.join(' ')}`)
+    let log = path.resolve(__dirname, './../debug/', path.parse(info.output).name + '.log')
 
-    let list = require('./walk')(`unzip\\${name}`)
+    require('child_process').execSync(`start /wait msiexec /a "${info.output}" /passive /qr /norestart /log "${log}" TARGETDIR="${path.parse(__dirname).dir}\\unzip\\${info.name}" ${msiParams.join(' ')}`)
+
+    let list = require('./walk')(`unzip\\${info.name}`)
     let pathSplit, rootPath
     if (preferPath) {
       pathSplit = preferPath.split(/[/\\]+/)
@@ -45,20 +44,19 @@ let install = async (from, to, excludes = [], preferPath, msiParams) => {
         return false
       }
     } else {
-      rootPath = list.find(i => fse.statSync(i).isFile() && path.dirname(path.relative(`unzip\\${name}`, i)) === '.')
-      pathSplit = path.relative(`unzip\\${name}`, rootPath).split('/')
+      rootPath = list.find(i => fse.statSync(i).isFile() && path.dirname(path.relative(`unzip\\${info.name}`, i)) === '.')
+      pathSplit = path.relative(`unzip\\${info.name}`, rootPath).split('/')
     }
 
     for (let i = 0; i < pathSplit.length; i++) {
       rootPath = path.parse(rootPath).dir
-      if (i !== 0) parentPath = path.parse(parentPath).dir
     }
 
-    require('./copy')(rootPath, parentPath, excludes)
+    require('./copy')(rootPath, info.parentPath, excludes)
     return true
   }
 
-  let killed = require('./kill')(from, to)
+  let killed = require('./kill')(info.parentPath)
   if (!killed) return false
 
   try {

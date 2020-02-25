@@ -1,15 +1,12 @@
 'use strict'
 
-let data = {
-  url: 'https://gitlab.com/angelkyo/w10-digitallicense/releases',
-  version: {
-    selector: '.card-body>h2:contains("DigitalLicense")'
-  },
-  download: {
-    selector: '.card-body:has(h2:contains("DigitalLicense")) a[href*="/uploads/"][href$=".zip"]'
-  },
-  install: function (output, iPath, fns) {
-    return fns.install.zipped.single(output, iPath)
+let data = { // Visual C++ Redistributable Runtimes
+  url: 'https://gitlab.com/api/v4/projects/11037551/releases',
+  version: (res, $) => res.json[0].tag_name.match(/v(.*)/)[1],
+  changelog: (res, $) => res.json[0].description,
+  download: async (res, $, fns, choice) => {
+    let $1 = fns.cheerio.load(res.json[0].description_html)
+    return [$1('[href*="2019_WinAll"]').eq(0).attr('href'), '.wa']
   }
 }
 module.exports = data

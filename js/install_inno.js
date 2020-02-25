@@ -3,75 +3,71 @@
 /**
  * @description regard the install pack as Inno Setup
  * @returns {boolean} if install completed
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} info
  * @param {(string | array)} excludes what files you don't want to install
  * @param {object} toDirUserDefined
  */
 
-let install = async (from, to, excludes = undefined, toDirUserDefined = {}) => {
+let install = async (info, excludes = undefined, toDirUserDefined = {}) => {
   const fse = require('fs-extra')
-  const path = require('path')
   const cp = require('child_process')
   const replace = require('./replaceWithDict')
 
   try {
-    cp.execSync(`plugins\\innounp.exe -t "${from}"`)
+    cp.execSync(`plugins\\innounp.exe -t "${info.output}"`)
   } catch (error) {
-    fse.unlinkSync(from)
-    console.error(`Output:\t${from}\nError:\tFile Error`)
+    fse.unlinkSync(info.output)
+    console.error(`Output:\t${info.output}\nError:\tFile Error`)
     return false
   }
 
   let install = () => {
-    let { dir: parentPath, name } = path.parse(to)
-    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-      parentPath = path.parse(parentPath).dir
-    }
-
     // http://innounp.sourceforge.net/#Usage
-    cp.execSync(`plugins\\innounp.exe -x -d"unzip\\${name}\\" -b -a -y "${from}"`)
-    let list = fse.readdirSync(`unzip\\${name}`).filter(i => fse.statSync(`unzip\\${name}\\` + i).isDirectory())
+    cp.execSync(`plugins\\innounp.exe -x -d"unzip\\${info.name}\\" -b -a -y "${info.output}"`)
+    let list = fse.readdirSync(`unzip\\${info.name}`).filter(i => fse.statSync(`unzip\\${info.name}\\` + i).isDirectory())
 
     // let is64bit = require('os').arch() === 'x64'
 
     let toDir = Object.assign({
-      '{app}': parentPath,
-      // '{win}': process.env.SystemRoot,
-      '{win}': null,
-      // '{sys}': process.env.SystemRoot + '\\system32',
-      '{sys}': null,
-      // '{syswow64}': process.env.SystemRoot + '\\SysWOW64',
-      '{syswow64}': null,
-      // '{sd}': process.env.SystemDrive,
-      '{sd}': null,
-      // '{pf}': process.env.ProgramFiles,
-      '{pf}': null,
-      // '{pf32}': is64bit ? process.env['ProgramFiles(x86)'] : process.env.ProgramFiles,
-      '{pf32}': null,
-      // '{pf64}': process.env.ProgramFiles,
-      '{pf64}': null,
-      // '{cf}': process.env.CommonProgramFiles,
-      '{cf}': null,
-      // '{cf32}': is64bit ? process.env['CommonProgramFiles(x86)'] : process.env.CommonProgramFiles,
-      '{cf32}': null,
-      // '{cf64}': process.env.CommonProgramFiles,
-      '{cf64}': null,
-      // '{fonts}': process.env.SystemRoot + '\\Fonts',
-      '{fonts}': null,
-      // '{dao}': process.env.ProgramFiles + '\\Microsoft Shared\\DAO',
-      '{dao}': null,
+      // http://www.jrsoftware.org/ishelp/index.php?topic=consts
 
-      // '{localappdata}': process.env.LOCALAPPDATA,
-      '{localappdata}': null,
-      // '{userappdata}': process.env.APPDATA,
-      '{userappdata}': null,
-      // '{commonappdata}': process.env.ProgramData,
-      '{commonappdata}': null,
-      // '{usercf}': process.env.LOCALAPPDATA + '\\Programs\\Common',
-      '{usercf}': null,
-      // '{userpf}': process.env.LOCALAPPDATA + '\\Programs',
-      '{userpf}': null,
+      '{app}': info.parentPath,
+
+      '{win}': null,
+      '{sys}': null,
+      '{syswow64}': null,
+      '{sd}': null,
+      '{pf}': null,
+      '{pf32}': null,
+      '{pf64}': null,
+      '{cf}': null,
+      '{cf32}': null,
+      '{cf64}': null,
+      '{fonts}': null,
+      '{dao}': null,
+      // '{win}': process.env.SystemRoot,
+      // '{sys}': process.env.SystemRoot + '\\system32',
+      // '{syswow64}': process.env.SystemRoot + '\\SysWOW64',
+      // '{sd}': process.env.SystemDrive,
+      // '{pf}': process.env.ProgramFiles,
+      // '{pf32}': is64bit ? process.env['ProgramFiles(x86)'] : process.env.ProgramFiles,
+      // '{pf64}': process.env.ProgramFiles,
+      // '{cf}': process.env.CommonProgramFiles,
+      // '{cf32}': is64bit ? process.env['CommonProgramFiles(x86)'] : process.env.CommonProgramFiles,
+      // '{cf64}': process.env.CommonProgramFiles,
+      // '{fonts}': process.env.SystemRoot + '\\Fonts',
+      // '{dao}': process.env.ProgramFiles + '\\Microsoft Shared\\DAO',
+
+      // '{localappdata}': null,
+      // '{userappdata}': null,
+      // '{commonappdata}': null,
+      // '{usercf}': null,
+      // '{userpf}': null,
+      '{localappdata}': process.env.LOCALAPPDATA,
+      '{userappdata}': process.env.APPDATA,
+      '{commonappdata}': process.env.ProgramData,
+      '{usercf}': process.env.LOCALAPPDATA + '\\Programs\\Common',
+      '{userpf}': process.env.LOCALAPPDATA + '\\Programs',
 
       '{src}': null,
       '{tmp}': null,
@@ -104,12 +100,12 @@ let install = async (from, to, excludes = undefined, toDirUserDefined = {}) => {
     }
 
     for (let i of toEval) {
-      require('./copy')(`unzip\\${name}\\${i}`, replace(toDir[i], { dir: parentPath }), excludes)
+      require('./copy')(`unzip\\${info.name}\\${i}`, replace(toDir[i], { dir: info.parentPath }), excludes)
     }
     return true
   }
 
-  let killed = require('./kill')(from, to)
+  let killed = require('./kill')(info.parentPath)
   if (!killed) return false
 
   try {

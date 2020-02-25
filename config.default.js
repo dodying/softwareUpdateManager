@@ -2,6 +2,7 @@
 
 let config = {
   debug: false,
+  formatOptions: {}, // debug模式下，写日志时，记录Object使用的格式，参照inspectOptions
   locale: 'zh-CN', // 决定时间格式
   ignoreWarn: { // 无视警告
     mode1: false, // 模式 1: 下载但不安装
@@ -11,7 +12,7 @@ let config = {
     withoutVirusScan: false, // 安装文件未扫描
     fixedPath: false // 目标路径无法改变
   },
-  profile: {
+  profile: { // 如果你要安装同个软件到不同位置，在这里设置
     example: {
       deepmerge: true // 是否深度合并，是则只替换相同key的值，否则直接替换对象
     }
@@ -28,6 +29,7 @@ let config = {
     safeDetectionRatio: 0 // 视为安全的检出率
   },
   specialMode: { // 为特定软件设置特定模式(最优先)
+    '7-Zip': 0
   },
   useProxy: 1, // 是否使用代理(包括请求与下载) 0.不使用 1.如果配置中声明，则使用 2.强制使用
   archivePath: 'archive',
@@ -37,6 +39,8 @@ let config = {
   ],
   urlWithoutProxy: [ // 请求与下载的链接如果匹配任一，则不走代理(最优先)
   ],
+  urlWithProxyForce: [],
+  urlWithoutProxyForce: [],
   autoToggleProxy: true, // 是否自动切换代理状态
   request: {
     userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36',
@@ -48,12 +52,11 @@ let config = {
     /**
      * method:
      *   request: (不推荐)无需下载，但bug众多，使用时continue推荐为false(即续传可能会出错)
-     *   aria2c: 支持多进程
      *   wget
      *   curl: 支持socks代理
      */
-    userAgent: null,
     method: 'request',
+    userAgent: null,
     quiet: false, // 不显示进度
     continue: true, // 是否断点续传
     retry: 5, // 重试次数(0表示无数次)
@@ -66,19 +69,34 @@ let config = {
   },
   preserveArchive: true, // 安装后是否保留安装包
   preserveOldArchive: false, // 当有新版本时，是否保留旧版本
+  backupOldVersion: 0, // 当新版本安装时，是否备份旧版本 0.不备份 1.移动 2.打包(可能会很慢)
   saveVersion: true, // 是否保存版本信息(推荐true)
+  openInstaller: 0, // 当缺少安装方式时，是否直接打开安装包 0.不打开 1.打开
+  installForce: { // 当使用命令行安装时，是否直接安装 // TODO
+    'Google/Google Earth Pro': true
+  },
   includeGlobal: [ // 安装中要保留的文件/文件夹(优先于excludeGlobal)
     'locales', 'resources'
   ],
   excludeGlobal: [ // 安装中要排除的文件/文件夹
-    /^uninstall.exe/i // 相对于软件根路径
+    /^uninstall.exe/i // 相对于软件安装路径
   ],
   search: [ // 留空则搜索全部网站，否则只按以下顺序搜索
     'Softpedia'
   ],
   software: { // 要启用更新的软件
-    '7-Zip': '7-Zip/7z.exe', // 路径(相对于rootPath，可使用绝对路径)
-    'Bandisoft Bandizip:portable': 'Bandizip/Bandizip64.exe' // 安装 Bandizip 的 portable 版本
+    // 键名：软件名[:版本] (在software文件夹下)
+    // 键值：路径(相对于rootPath，可使用绝对路径)
+    '7-Zip': '7-Zip|7z.exe',
+    // 安装路径与程序路径（用于获取版本号）用 | 分隔
+    // 在下方示例中，
+    // 安装路径为 Epic
+    // 程序路径为 Portal/Binaries/Win32/EpicGamesLauncher.exe
+    // 如果你不知道程序路径，可以使用空值 "Epic|"，或是先设置为任意值，等安装后在修改
+    // 注意：如果程序路径不存在(不等同于空值)，该脚本会在每次运行时都尝试安装改软件
+    'Epic Games': 'Epic|Portal/Binaries/Win32/EpicGamesLauncher.exe',
+
+    'Bandisoft/Bandizip:portable': 'Bandizip|Bandizip64.exe' // 安装 Bandizip 的 portable 版本
   }
 }
 

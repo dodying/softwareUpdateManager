@@ -12,5 +12,6 @@ html
 node_modules
 plugins
 software.json
+software-description.json
 software*
 unzip

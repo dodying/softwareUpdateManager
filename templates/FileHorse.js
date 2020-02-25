@@ -1,15 +1,14 @@
 'use strict'
 
 let data = {
-  url: 'https://www.filehorse.com/download-evernote/download/',
-  version: {
-    selector: '.pageing>li:nth-child(3)'
+  version: (res, $) => {
+    let name = $('[itemprop="name"]').eq(0).text().trim()
+    return $('[itemprop="softwareVersion"]').eq(0).text().replace(new RegExp(name, 'gi'), '').replace(/LATEST/i, '').trim()
   },
-  download: {
-    selector: '#download_url'
+  changelog: {
+    url: '[href$="/change-log/"]',
+    selector: '.software_menu+div>p:nth-child(2)'
   },
-  install: function (output, iPath, fns) {
-    return fns.install(output, iPath)
-  }
+  download: async (res, $, fns, choice) => fns.walkLink(res, fns, '[itemprop="downloadUrl"]', '#download_url')
 }
 module.exports = data

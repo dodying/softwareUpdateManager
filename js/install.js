@@ -3,34 +3,37 @@
 /**
  * @description regard the install pack as a zipped file
  * @returns {boolean} if install completed
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} info
  * @param {(string | array)} excludes what files you don't want to install
  * @param {string} filterInZip The filter to real install pack in zipped file
  */
 
-let install = async (from, to, excludes = undefined, filterInZip = '', params = '') => {
+let install = async (info, excludes = undefined, filterInZip = '', params = '') => {
   const fse = require('fs-extra')
   const path = require('path')
   const cp = require('child_process')
+  const readlineSync = require('readline-sync')
 
-  try {
-    cp.execSync(`plugins\\7z.exe t "${from}" ${params || ''}`)
-  } catch (error) {
-    fse.unlinkSync(from)
-    console.error(`Output:\t${from}\nError:\tFile Error`)
-    return false
+  let check = () => {
+    try {
+      cp.execSync(`plugins\\7z.exe t -sccUTF-8 "${info.output}" ${params || ''}`)
+    } catch (error) {
+      if (error.output.toString().includes('Enter password (will not be echoed):')) {
+        let pwd = readlineSync.question('Encrypted zip, please put in password: (find in download page) ')
+        params += ` -p"${pwd}"`
+        return true
+      } else {
+        fse.unlinkSync(info.output)
+        console.error(`Error:\tFile "${info.output}" Error`)
+        return false
+      }
+    }
   }
 
   let install = () => {
-    let parentPath = path.dirname(to)
-    while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-      parentPath = path.parse(parentPath).dir
-    }
-
     let name = Math.random().toString().substr(2)
 
-    cp.execSync(`plugins\\7z.exe x -y -o"unzip\\${name}\\" "${from}" ${params || ''} ${filterInZip || ''}`)
+    cp.execSync(`plugins\\7z.exe x -sccUTF-8 -y -o"unzip\\${name}\\" "${info.output}" ${params || ''} ${filterInZip || ''}`)
     let fromNew = `unzip\\${name}`
     let list = fse.readdirSync(fromNew)
     while (list.length === 1) {
@@ -42,14 +45,19 @@ let install = async (from, to, excludes = undefined, filterInZip = '', params = 
       list = fse.readdirSync(fromNew)
     }
 
-    require('./copy')(fromNew, parentPath, excludes)
+    require('./copy')(fromNew, info.parentPath, excludes)
     return true
   }
 
-  let killed = require('./kill')(from, to)
+  let killed = require('./kill')(info.parentPath)
   if (!killed) return false
 
   try {
+    let checked = true
+    while (checked) {
+      checked = check()
+    }
+    if (checked === false) return
     let installed = install()
     return installed
   } catch (error) {

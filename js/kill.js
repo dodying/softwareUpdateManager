@@ -3,20 +3,14 @@
 /**
  * @description try to kill the process(es) which under folder of {to}
  * @returns {boolean} if process(es) kill
- * @param {string} from A path to the install pack file.
- * @param {string} to A path to the bin file.
+ * @param {string} parentPath A path to the bin file.
  */
 
-let kill = (from, to) => {
+let kill = parentPath => {
   const cp = require('child_process')
   const readlineSync = require('readline-sync')
-  const path = require('path')
 
   let running
-  let { dir: parentPath } = path.parse(to)
-  while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-    parentPath = path.parse(parentPath).dir
-  }
   if (!require('fs').existsSync(parentPath)) return true
 
   try {
@@ -28,8 +22,8 @@ let kill = (from, to) => {
   if (running) {
     console.log(running)
     let choose = [
-      'Not Kill (skip install this software)',
-      'Not Kill (install force, may throw error)',
+      'Skip, Not Kill (skip install this software)',
+      'Install, Not Kill (install force, may throw error)',
       'Kill manually (wait until you kill process)',
       'Kill immediately (may with data losed)'
     ]
@@ -43,7 +37,7 @@ let kill = (from, to) => {
     } else if (choose === 3) {
       cp.execSync(`wmic process where "ExecutablePath like '${parentPath.replace(/[/\\]/g, '\\\\')}%'" Call Terminate`).toString()
     }
-    return require('./kill')(from, to)
+    return require('./kill')(parentPath)
   }
   return true
 }

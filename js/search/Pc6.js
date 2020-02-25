@@ -6,9 +6,7 @@ let data = {
   site: {
     Pc6: '{{url}}'
   },
-  install: function (output, iPath, fns) {
-    return fns.install.auto(output, iPath)
-  }
+  install: 'install_auto'
 }
 module.exports = data
 `
