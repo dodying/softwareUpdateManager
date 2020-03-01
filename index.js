@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1837
+// @Version:            1.1.1849
 // @Author:             dodying
-// @Modified:           2019-12-20 00:20:54
+// @Modified:           2020-3-1 10:41:53
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -369,6 +369,7 @@ if (args.length) {
       process.exit()
     })()
   } else if (args.includes('--search')) {
+    mode = 'search'
   }
 
   if (args.includes('--quiet')) {
@@ -1245,12 +1246,11 @@ async function virusCheckFile (file) {
     form: {
       apikey: _.virus.apiKey,
       resource: sha256
-    },
-    json: true
+    }
   })
   if (!res.statusCode || !res.body) return virusCheckFile(file)
-  if (res.body.response_code === -2) return 'Scaning'
-  if (res.body.response_code === 0 && _.virus.upload) {
+  if (res.json.response_code === -2) return 'Scaning'
+  if (res.json.response_code === 0 && _.virus.upload) {
     console.log('Notice:\tYour file is uploading to scan')
     res = await req({
       uri: 'https://www.virustotal.com/vtapi/v2/file/scan',
@@ -1264,15 +1264,14 @@ async function virusCheckFile (file) {
             contentType: 'application/octet-stream'
           }
         }
-      },
-      json: true
+      }
     })
     return virusCheckFile(file)
   }
-  if (res.body.response_code === 0 && !_.virus.upload) return 'No Data'
+  if (res.json.response_code === 0 && !_.virus.upload) return 'No Data'
 
-  let result = Object.keys(res.body.scans).map(i => {
-    return Object.assign({ name: i }, res.body.scans[i])
+  let result = Object.keys(res.json.scans).map(i => {
+    return Object.assign({ name: i }, res.json.scans[i])
   })
   console.warn(result.filter(i => i.detected).map(i => `Warn:\t${i.name}: ${i.result}`).join('\n'))
   result = result.filter(i => {
@@ -1417,7 +1416,7 @@ async function init () {
 
   if (mode === 'search') { // Search
     let result = []
-    let keyword = args
+    let keyword = args[args.indexOf('--search') + 1]
 
     let list = [].concat(_.search).filter(i => fse.existsSync(path.join('./js/search', i + '.js')))
     if (!list.length) list = fse.readdirSync('./js/search')
