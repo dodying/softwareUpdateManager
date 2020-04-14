@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description regard the install pack as Inno Setup
@@ -8,27 +8,27 @@
  * @param {object} toDirUserDefined
  */
 
-let install = async (info, excludes = undefined, toDirUserDefined = {}) => {
-  const fse = require('fs-extra')
-  const cp = require('child_process')
-  const replace = require('./replaceWithDict')
+const install = async (info, excludes = undefined, toDirUserDefined = {}) => {
+  const fse = require('fs-extra');
+  const cp = require('child_process');
+  const replace = require('./replaceWithDict');
 
   try {
-    cp.execSync(`plugins\\innounp.exe -t "${info.output}"`)
+    cp.execSync(`plugins\\innounp.exe -t "${info.output}"`);
   } catch (error) {
-    fse.unlinkSync(info.output)
-    console.error(`Output:\t${info.output}\nError:\tFile Error`)
-    return false
+    fse.unlinkSync(info.output);
+    console.error(`Output:\t${info.output}\nError:\tFile Error`);
+    return false;
   }
 
-  let install = () => {
+  const install = () => {
     // http://innounp.sourceforge.net/#Usage
-    cp.execSync(`plugins\\innounp.exe -x -d"unzip\\${info.name}\\" -b -a -y "${info.output}"`)
-    let list = fse.readdirSync(`unzip\\${info.name}`).filter(i => fse.statSync(`unzip\\${info.name}\\` + i).isDirectory())
+    cp.execSync(`plugins\\innounp.exe -x -d"unzip\\${info.name}\\" -b -a -y "${info.output}"`);
+    const list = fse.readdirSync(`unzip\\${info.name}`).filter(i => fse.statSync(`unzip\\${info.name}\\` + i).isDirectory());
 
     // let is64bit = require('os').arch() === 'x64'
 
-    let toDir = Object.assign({
+    const toDir = Object.assign({
       // http://www.jrsoftware.org/ishelp/index.php?topic=consts
 
       '{app}': info.parentPath,
@@ -87,34 +87,34 @@ let install = async (info, excludes = undefined, toDirUserDefined = {}) => {
       '{commonstartup}': null,
       '{usertemplates}': null,
       '{commontemplates}': null
-    }, toDirUserDefined)
-    let toEval = []
+    }, toDirUserDefined);
+    const toEval = [];
 
-    for (let i of list) {
+    for (const i of list) {
       if (i in toDir) {
-        let topath = toDir[i]
-        if (topath) toEval.push(i)
+        const topath = toDir[i];
+        if (topath) toEval.push(i);
       } else {
-        console.warn(`Warn:\tNot defined dir "${i}"`)
+        console.warn(`Warn:\tNot defined dir "${i}"`);
       }
     }
 
-    for (let i of toEval) {
-      require('./copy')(`unzip\\${info.name}\\${i}`, replace(toDir[i], { dir: info.parentPath }), excludes)
+    for (const i of toEval) {
+      require('./copy')(`unzip\\${info.name}\\${i}`, replace(toDir[i], { dir: info.parentPath }), excludes);
     }
-    return true
-  }
+    return true;
+  };
 
-  let killed = require('./kill')(info.parentPath)
-  if (!killed) return false
+  const killed = require('./kill')(info.parentPath);
+  if (!killed) return false;
 
   try {
-    let installed = install()
-    return installed
+    const installed = install();
+    return installed;
   } catch (error) {
-    console.error(error)
-    return false
+    console.error(error);
+    return false;
   }
-}
+};
 
-module.exports = install
+module.exports = install;

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description regard the install pack as Advanced Installer
@@ -8,59 +8,59 @@
  * @param {string} filter The filter to path of folder or file (single)
  */
 
-let install = async (info, excludes = undefined, filter) => {
-  const path = require('path')
-  const fse = require('fs-extra')
-  const cp = require('child_process')
-  let parentPath = info.parentPath
+const install = async (info, excludes = undefined, filter) => {
+  const path = require('path');
+  const fse = require('fs-extra');
+  const cp = require('child_process');
+  let parentPath = info.parentPath;
 
-  let install = () => {
-    cp.execSync(`"${info.output}" /extract:"${info.fns.dirname}\\unzip\\"`)
+  const install = () => {
+    cp.execSync(`"${info.output}" /extract:"${info.fns.dirname}\\unzip\\"`);
 
-    let fromNew = fse.readdirSync('unzip')
-    let fromNewFilter = fromNew.filter(i => i.match(/^[A-Z0-9]{7}$/))
+    let fromNew = fse.readdirSync('unzip');
+    const fromNewFilter = fromNew.filter(i => i.match(/^[A-Z0-9]{7}$/));
     if (fromNewFilter.length) {
-      fromNew = path.join('unzip', fromNewFilter[0])
+      fromNew = path.join('unzip', fromNewFilter[0]);
     } else {
-      fromNew = 'unzip'
+      fromNew = 'unzip';
     }
 
     if (filter) {
-      let lst = require('./walk')(fromNew, { ignoreFile: '.msi', recursive: false })
-      fromNew = lst.filter(i => path.relative(fromNew, i).match(filter))
+      const lst = require('./walk')(fromNew, { ignoreFile: '.msi', recursive: false });
+      fromNew = lst.filter(i => path.relative(fromNew, i).match(filter));
       if (fromNew.length) {
-        fromNew = fromNew[0]
+        fromNew = fromNew[0];
       } else {
-        console.error(`Error:\tCan get match path in "install_ai.js"`)
+        console.error('Error:\tCan get match path in "install_ai.js"');
       }
     } else {
-      let lst = fse.readdirSync(fromNew).filter(i => !['.msi'].includes(path.extname(i)))
+      let lst = fse.readdirSync(fromNew).filter(i => !['.msi'].includes(path.extname(i)));
       while (lst.length === 1) {
-        fromNew = path.resolve(fromNew, lst[0])
+        fromNew = path.resolve(fromNew, lst[0]);
         if (!fse.statSync(fromNew).isDirectory()) {
-          fromNew = path.parse(fromNew).dir
-          break
+          fromNew = path.parse(fromNew).dir;
+          break;
         }
-        lst = fse.readdirSync(fromNew).filter(i => !['.msi'].includes(path.extname(i)))
+        lst = fse.readdirSync(fromNew).filter(i => !['.msi'].includes(path.extname(i)));
       }
     }
 
-    if (fse.statSync(fromNew).isFile()) parentPath = info.path
+    if (fse.statSync(fromNew).isFile()) parentPath = info.path;
 
-    require('./copy')(fromNew, parentPath, excludes)
-    return true
-  }
+    require('./copy')(fromNew, parentPath, excludes);
+    return true;
+  };
 
-  let killed = require('./kill')(info.parentPath)
-  if (!killed) return false
+  const killed = require('./kill')(info.parentPath);
+  if (!killed) return false;
 
   try {
-    let installed = install()
-    return installed
+    const installed = install();
+    return installed;
   } catch (error) {
-    console.error(error)
-    return false
+    console.error(error);
+    return false;
   }
-}
+};
 
-module.exports = install
+module.exports = install;

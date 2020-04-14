@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-let templates = `'use strict'
+const templates = `'use strict'
 
 let data = {
   site: {
@@ -9,10 +9,10 @@ let data = {
   install: 'install_auto'
 }
 module.exports = data
-`
+`;
 
-let search = async (fns, keyword) => {
-  let res = await fns.req({
+const search = async (fns, keyword) => {
+  const res = await fns.req({
     uri: 'https://www.softpedia.com/_xaja/programfinder.php',
     method: 'POST',
     form: {
@@ -21,7 +21,7 @@ let search = async (fns, keyword) => {
       s: true,
       k: keyword
     }
-  })
+  });
   return res && res.json && res.json.hasphones ? res.json.phones.sort((a, b) => a.date * 1 >= b.date ? -1 : a.date === b.date ? 0 : 1).map(i => {
     return {
       name: i.title,
@@ -36,8 +36,8 @@ let search = async (fns, keyword) => {
         { key: 'Date', value: new Date(i.date * 1000).toLocaleString() }
       ].map(j => `<li><b>${j.key}</b>: ${j.value}</li>`).join(''),
       text: templates.replace('{{url}}', i.link)
-    }
-  }) : []
-}
+    };
+  }) : [];
+};
 
-module.exports = search
+module.exports = search;

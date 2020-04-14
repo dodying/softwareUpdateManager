@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-let templates = `'use strict'
+const templates = `'use strict'
 
 let data = {
   site: {
@@ -9,18 +9,18 @@ let data = {
   install: 'install_auto'
 }
 module.exports = data
-`
+`;
 
-let search = async (fns, keyword) => {
-  let res = await fns.req('https://www.filehorse.com/search?q=' + encodeURI(keyword))
-  if (!res || !res.body) return []
-  let $ = fns.cheerio.load(res.body)
+const search = async (fns, keyword) => {
+  const res = await fns.req('https://www.filehorse.com/search?q=' + encodeURI(keyword));
+  if (!res || !res.body) return [];
+  const $ = fns.cheerio.load(res.body);
   return $('.software_list>li:not(.ads,.no_match)').map((index, item) => {
-    let url = $(item).find('h3>a').attr('href')
-    let length = url.match(/\/download-(.*?)(|-32|-64)\//)[1].length
-    let name = $(item).find('h3>a').text().substr(0, length)
-    let version = $(item).find('h3>a').text().substr(length + 1)
-    let price = $(item).find('h3+p>abbr').text().trim()
+    const url = $(item).find('h3>a').attr('href');
+    const length = url.match(/\/download-(.*?)(|-32|-64)\//)[1].length;
+    const name = $(item).find('h3>a').text().substr(0, length);
+    const version = $(item).find('h3>a').text().substr(length + 1);
+    const price = $(item).find('h3+p>abbr').text().trim();
     return {
       name: name,
       image: $(item).find('a>img').attr('src'),
@@ -32,8 +32,8 @@ let search = async (fns, keyword) => {
         { key: 'Date', value: $(item).find('h3+p').text().replace(price, '').trim() }
       ].map(j => `<li><b>${j.key}</b>: ${j.value}</li>`).join(''),
       text: templates.replace('{{url}}', url)
-    }
-  }).toArray()
-}
+    };
+  }).toArray();
+};
 
-module.exports = search
+module.exports = search;

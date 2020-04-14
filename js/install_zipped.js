@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description regard the install pack as a zipped file which contains a real install pack
@@ -9,39 +9,39 @@
  * @param {string} args other args for js
  */
 
-let install = async (info, js, filter = undefined, ...args) => {
-  const path = require('path')
-  const fse = require('fs-extra')
-  const cp = require('child_process')
+const install = async (info, js, filter = undefined, ...args) => {
+  const path = require('path');
+  const fse = require('fs-extra');
+  const cp = require('child_process');
 
   try {
-    cp.execSync(`plugins\\7z.exe t -sccUTF-8 "${info.output}"`)
+    cp.execSync(`plugins\\7z.exe t -sccUTF-8 "${info.output}"`);
   } catch (error) {
-    fse.unlinkSync(info.output)
-    console.error(`Error:\tFile "${info.output}" Error`)
-    return false
+    fse.unlinkSync(info.output);
+    console.error(`Error:\tFile "${info.output}" Error`);
+    return false;
   }
 
-  cp.execSync(`plugins\\7z.exe x -sccUTF-8 -y -o"unzip" "${info.output}"`)
-  let list = require('./walk')('unzip').map(i => i.replace(/^unzip(\\|\/)/, ''))
+  cp.execSync(`plugins\\7z.exe x -sccUTF-8 -y -o"unzip" "${info.output}"`);
+  let list = require('./walk')('unzip').map(i => i.replace(/^unzip(\\|\/)/, ''));
 
-  list = list.filter(i => fse.statSync(path.resolve('./unzip', i)).isFile())
-  let fromNew = filter ? list.filter(i => i.match(filter))[0] : list[0]
+  list = list.filter(i => fse.statSync(path.resolve('./unzip', i)).isFile());
+  const fromNew = filter ? list.filter(i => i.match(filter))[0] : list[0];
   if (!fromNew) {
-    console.error(`Error:\tFile "${info.output}" Cant Find "${filter}"`)
-    return false
+    console.error(`Error:\tFile "${info.output}" Cant Find "${filter}"`);
+    return false;
   }
 
-  info.output = path.resolve('./unzip', fromNew)
+  info.output = path.resolve('./unzip', fromNew);
   // console.debug({ output: info.output })
-  let installed
+  let installed;
   if (typeof js === 'string' && require('./' + js)) {
-    installed = await require('./' + js)(info, ...args)
+    installed = await require('./' + js)(info, ...args);
   } else if (typeof js === 'function') {
-    installed = await js(info)
+    installed = await js(info);
   }
 
-  return installed
-}
+  return installed;
+};
 
-module.exports = install
+module.exports = install;

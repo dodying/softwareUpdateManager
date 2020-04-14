@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description regard the install pack as Inno Setup and Single file
@@ -7,8 +7,8 @@
  * @param {string} filter The filter to path
  */
 
-let install = async (info, filter = /\.exe$/i) => {
-  return require('./install_zipped')(info, 'install_single', filter)
-}
+const install = async (info, filter = /\.exe$/i) => {
+  return require('./install_zipped')(info, 'install_single', filter);
+};
 
-module.exports = install
+module.exports = install;

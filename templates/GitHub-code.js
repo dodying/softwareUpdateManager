@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-let data = {
+const data = {
   url: 'https://github.com/OneQuick/OneQuick.github.io/tree/master/bin',
   version: async (res, $, fns, choice) => fns.walkLink(res, fns, {
     selector: '.content .js-navigation-open',
@@ -14,5 +14,5 @@ let data = {
   }, {
     selector: '#raw-url'
   })
-}
-module.exports = data
+};
+module.exports = data;

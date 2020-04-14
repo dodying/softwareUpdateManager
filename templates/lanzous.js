@@ -1,26 +1,26 @@
-'use strict'
+'use strict';
 
-let info
+let info;
 
-let data = {
+const data = {
   version: async (res, $, fns, choice) => {
-    let match = choice ? [].concat(choice) : [/.zip$/, /(\d+[\d.]+\d+)/]
+    const match = choice ? [].concat(choice) : [/.zip$/, /(\d+[\d.]+\d+)/];
 
-    let timeName = res.body.match(/'t':(.*?),/)[1]
-    let keyName = res.body.match(/'k':(.*?),/)[1]
-    let time = res.body.match(`${timeName} = '(.*?)';`)[1]
-    let key = res.body.match(`${keyName} = '(.*?)';`)[1]
-    let form = res.body.replace(/[\r\n]/g, '').match(/data : \{(.*?)\}/)[1]
-    form = `{${form.replace(/'/g, '"').trim().replace(/,$/, '').replace('pgs', 1).replace(timeName, `"${time}"`).replace(keyName, `"${key}"`)}}`
-    form = JSON.parse(form)
+    const timeName = res.body.match(/'t':(.*?),/)[1];
+    const keyName = res.body.match(/'k':(.*?),/)[1];
+    const time = res.body.match(`${timeName} = '(.*?)';`)[1];
+    const key = res.body.match(`${keyName} = '(.*?)';`)[1];
+    let form = res.body.replace(/[\r\n]/g, '').match(/data : \{(.*?)\}/)[1];
+    form = `{${form.replace(/'/g, '"').trim().replace(/,$/, '').replace('pgs', 1).replace(timeName, `"${time}"`).replace(keyName, `"${key}"`)}}`;
+    form = JSON.parse(form);
 
-    let res1 = await fns.req({
+    const res1 = await fns.req({
       method: 'POST',
       uri: 'https://www.lanzous.com/filemoreajax.php',
       form
-    })
-    info = res1.json.text.filter(i => i.name_all.match(match[0]))[0]
-    return info.name_all.match(match[1] || match[0])[1]
+    });
+    info = res1.json.text.filter(i => i.name_all.match(match[0]))[0];
+    return info.name_all.match(match[1] || match[0])[1];
   }
   // download: async (res, $, fns, choice) => {
   //   let res1 = await fns.req(`https://www.lanzous.com/${info.id}`)
@@ -36,5 +36,5 @@ let data = {
   //   })
   //   return [res3.json.dom + '/file/' + res3.json.url, require('path').extname(info.name_all)]
   // }
-}
-module.exports = data
+};
+module.exports = data;

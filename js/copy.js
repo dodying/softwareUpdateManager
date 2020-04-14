@@ -1,7 +1,7 @@
-'use strict'
+'use strict';
 
-const fse = require('fs-extra')
-const path = require('path')
+const fse = require('fs-extra');
+const path = require('path');
 
 /**
  * @description copy file
@@ -10,23 +10,23 @@ const path = require('path')
  * @param {(string | array)} excludes what files you don't want to copy
  */
 
-let copy = function (from, to, excludes) {
-  excludes = require('./../config').excludeGlobal.concat(excludes || [])
-  let includes = require('./../config').includeGlobal
+const copy = function (from, to, excludes) {
+  excludes = require('./../config').excludeGlobal.concat(excludes || []);
+  const includes = require('./../config').includeGlobal;
 
   fse.copySync(from, to, {
     filter: (src, dest) => {
-      let relativePath = path.relative(from, src)
+      const relativePath = path.relative(from, src);
 
-      if (includes.some(i => relativePath.match(i))) return true
+      if (includes.some(i => relativePath.match(i))) return true;
       if (excludes.some(i => relativePath.match(i))) {
-        console.log(`Excluded File:\t${relativePath}`)
-        return false
+        console.log(`Excluded File:\t${relativePath}`);
+        return false;
       }
 
-      return true
+      return true;
     }
-  })
-}
+  });
+};
 
-module.exports = copy
+module.exports = copy;

@@ -1,34 +1,34 @@
-'use strict'
+'use strict';
 
-let downloadUrl
+let downloadUrl;
 
-let data = {
+const data = {
   version: async (res, $, fns, choice = {}) => {
     if (choice && (typeof choice === 'string' || choice instanceof Array)) {
-      choice = [].concat(choice)
-      choice = { url: choice[0], match: choice[1], replace: choice[2] }
+      choice = [].concat(choice);
+      choice = { url: choice[0], match: choice[1], replace: choice[2] };
     }
 
-    if (!choice.url.match(/^https?:/)) choice.url = $(choice.url).eq(0).attr('href')
-    let res1 = await fns.reqHEAD(choice.url)
-    downloadUrl = res1.request.uri.href
+    if (!choice.url.match(/^https?:/)) choice.url = $(choice.url).eq(0).attr('href');
+    const res1 = await fns.reqHEAD(choice.url);
+    downloadUrl = res1.request.uri.href;
 
-    let filename
+    let filename;
     if (res1.headers['content-disposition'] && res1.headers['content-disposition'].match(/filename="(.*)"/)) {
-      filename = res1.headers['content-disposition'].match(/filename="(.*)"/)[1]
+      filename = res1.headers['content-disposition'].match(/filename="(.*)"/)[1];
     } else {
-      filename = res1.request.uri.href
+      filename = res1.request.uri.href;
     }
-    console.debug({ downloadUrl, filename })
+    console.debug({ downloadUrl, filename });
 
-    let version = decodeURIComponent(filename).match(choice.match || /(\d+[\d.]+\d+)/)
+    let version = decodeURIComponent(filename).match(choice.match || /(\d+[\d.]+\d+)/);
     if (choice.replace) {
-      version = version[0].replace(choice.match, choice.replace)
+      version = version[0].replace(choice.match, choice.replace);
     } else {
-      version = version[1]
+      version = version[1];
     }
-    return version
+    return version;
   },
   download: () => downloadUrl
-}
-module.exports = data
+};
+module.exports = data;

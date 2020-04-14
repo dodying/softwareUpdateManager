@@ -1,6 +1,6 @@
-'use strict'
+'use strict';
 
-let config = {
+const config = {
   debug: false,
   formatOptions: {}, // debug模式下，写日志时，记录Object使用的格式，参照inspectOptions
   locale: 'zh-CN', // 决定时间格式
@@ -88,6 +88,7 @@ let config = {
     // 键名：软件名[:版本] (在software文件夹下)
     // 键值：路径(相对于rootPath，可使用绝对路径)
     '7-Zip': '7-Zip|7z.exe',
+
     // 安装路径与程序路径（用于获取版本号）用 | 分隔
     // 在下方示例中，
     // 安装路径为 Epic
@@ -98,6 +99,6 @@ let config = {
 
     'Bandisoft/Bandizip:portable': 'Bandizip|Bandizip64.exe' // 安装 Bandizip 的 portable 版本
   }
-}
+};
 
-module.exports = config
+module.exports = config;

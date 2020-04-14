@@ -1,21 +1,21 @@
-'use strict'
+'use strict';
 
-let data = {
+const data = {
   url: 'https://www.techpowerup.com/download/techpowerup-gpu-z/',
   version: '.title',
   changelog: '.history-entries>.version',
   download: async (res, $, fns) => {
-    let url = res.request.uri.href
-    let res1 = await fns.req({
+    const url = res.request.uri.href;
+    const res1 = await fns.req({
       uri: url,
       method: 'POST',
       form: {
         id: $('.version:not(.hidden) form>input[name="id"]').val()
       }
-    })
+    });
 
-    let $1 = fns.cheerio.load(res1.body)
-    let res2 = await fns.req({
+    const $1 = fns.cheerio.load(res1.body);
+    const res2 = await fns.req({
       uri: url,
       method: 'POST',
       form: {
@@ -24,8 +24,8 @@ let data = {
       }
     }, {
       check: res => [200, 302].includes(res.statusCode)
-    })
-    return res2.headers.location
+    });
+    return res2.headers.location;
   }
-}
-module.exports = data
+};
+module.exports = data;

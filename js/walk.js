@@ -1,35 +1,35 @@
-'use strict'
+'use strict';
 
-const fs = require('fs')
-const path = require('path')
+const fs = require('fs');
+const path = require('path');
 
-let getValue = (value, dafaultValue) => {
+const getValue = (value, dafaultValue) => {
   if (value instanceof Array) {
   } else if (value instanceof RegExp || typeof value === 'string') {
-    value = [].concat(value)
+    value = [].concat(value);
   } else if (typeof value === 'number') {
-    value = [].concat(value.toString())
+    value = [].concat(value.toString());
   } else {
-    value = dafaultValue
+    value = dafaultValue;
   }
-  return value
-}
+  return value;
+};
 
 class Option {
   constructor (dir, other = {}) {
-    this.dir = dir
+    this.dir = dir;
     Object.assign(this, {
       fullpath: true,
       nodir: false,
       recursive: true
-    }, other)
-    this.ignore = getValue(this.ignore, [])
-    this.ignoreDir = getValue(this.ignoreDir, [])
-    this.ignoreFile = getValue(this.ignoreFile, [])
+    }, other);
+    this.ignore = getValue(this.ignore, []);
+    this.ignoreDir = getValue(this.ignoreDir, []);
+    this.ignoreFile = getValue(this.ignoreFile, []);
 
-    this.match = getValue(this.match, null)
-    this.matchDir = getValue(this.matchDir, null)
-    this.matchFile = getValue(this.matchFile, null)
+    this.match = getValue(this.match, null);
+    this.matchDir = getValue(this.matchDir, null);
+    this.matchFile = getValue(this.matchFile, null);
   }
 }
 
@@ -40,42 +40,42 @@ class Option {
  * @param {object} option
  */
 
-let walk = function (dir, option = {}) {
-  option = new Option(dir, option)
+const walk = function (dir, option = {}) {
+  option = new Option(dir, option);
 
   // dir = path.resolve(process.cwd(), dir)
 
-  let output = []
-  let list = fs.readdirSync(dir)
+  let output = [];
+  const list = fs.readdirSync(dir);
   list.forEach(function (file) {
-    if (option.ignore.some(i => file.match(i))) return
-    if (option.match && !option.match.some(i => file.match(i))) return
+    if (option.ignore.some(i => file.match(i))) return;
+    if (option.match && !option.match.some(i => file.match(i))) return;
 
-    let fullpath = path.join(dir, file)
-    let name = option.fullpath ? fullpath : path.relative(option.dir, fullpath)
-    let isDirectory
+    const fullpath = path.join(dir, file);
+    const name = option.fullpath ? fullpath : path.relative(option.dir, fullpath);
+    let isDirectory;
     try {
-      isDirectory = fs.existsSync(fullpath) && fs.statSync(fullpath).isDirectory()
+      isDirectory = fs.existsSync(fullpath) && fs.statSync(fullpath).isDirectory();
     } catch (error) { // ignore
-      return
+      return;
     }
     if (isDirectory) {
-      let dirname = file // path.dirname(file)
-      if (option.ignoreDir.some(i => dirname.match(i))) return
-      if (option.matchDir && !option.matchDir.some(i => dirname.match(i))) return
+      const dirname = file; // path.dirname(file)
+      if (option.ignoreDir.some(i => dirname.match(i))) return;
+      if (option.matchDir && !option.matchDir.some(i => dirname.match(i))) return;
 
-      if (!option.nodir) output.push(name)
-      if (option.recursive) output = output.concat(walk(fullpath, option) || [])
+      if (!option.nodir) output.push(name);
+      if (option.recursive) output = output.concat(walk(fullpath, option) || []);
     } else {
-      let basename = path.basename(file)
-      if (option.ignoreFile.some(i => basename.match(i))) return
-      if (option.matchFile && !option.matchFile.some(i => basename.match(i))) return
+      const basename = path.basename(file);
+      if (option.ignoreFile.some(i => basename.match(i))) return;
+      if (option.matchFile && !option.matchFile.some(i => basename.match(i))) return;
 
-      if (option.match && !option.match.some(i => file.match(i))) return
-      output.push(name)
+      if (option.match && !option.match.some(i => file.match(i))) return;
+      output.push(name);
     }
-  })
-  return output
-}
+  });
+  return output;
+};
 
-module.exports = walk
+module.exports = walk;

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description unzip
@@ -8,15 +8,15 @@
  * @param {string} filterInZip The filter to real install pack in zipped file
  */
 
-let unzip = (zip, dist, filterInZip = '') => {
-  const cp = require('child_process')
+const unzip = (zip, dist, filterInZip = '') => {
+  const cp = require('child_process');
   try {
-    cp.execSync(`plugins\\7z.exe x -sccUTF-8 -y -o"${dist}" "${zip}" ${filterInZip || ''}`)
-    return true
+    cp.execSync(`plugins\\7z.exe x -sccUTF-8 -y -o"${dist}" "${zip}" ${filterInZip || ''}`);
+    return true;
   } catch (error) {
-    console.error(error)
-    return false
+    console.error(error);
+    return false;
   }
-}
+};
 
-module.exports = unzip
+module.exports = unzip;

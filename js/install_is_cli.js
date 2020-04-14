@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description regard the install pack as Nullsoft Scriptable Install System
@@ -9,12 +9,12 @@
  * @param {function} callback
  */
 
-let install = async (info, args, options = {}, callback) => {
+const install = async (info, args, options = {}, callback) => {
   // https://helpnet.flexerasoftware.com/installshield19helplib/helplibrary/IHelpSetup_EXECmdLine.htm
   // https://www.itninja.com/static/090770319967727eb89b428d77dcac07.pdf
-  args = [].concat('/v"INSTALLDIR=\\"{dir}""', args || [])
-  options = Object.assign({ wait: true, shell: true }, options)
-  return require('./install_cli')(info, null, args, options, callback)
-}
+  args = [].concat('/v"INSTALLDIR=\\"{dir}""', args || []);
+  options = Object.assign({ wait: true, shell: true }, options);
+  return require('./install_cli')(info, null, args, options, callback);
+};
 
-module.exports = install
+module.exports = install;

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * @description
@@ -9,8 +9,8 @@
  * @param {function} callback
  */
 
-let install = async (info, args, options = {}, callback) => {
-  return info.fns.install.cli(info, null, ['/S'].concat(args || []), Object.assign({ wait: true }, options), callback)
-}
+const install = async (info, args, options = {}, callback) => {
+  return info.fns.install.cli(info, null, ['/S'].concat(args || []), Object.assign({ wait: true }, options), callback);
+};
 
-module.exports = install
+module.exports = install;

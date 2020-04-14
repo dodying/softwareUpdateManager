@@ -1,55 +1,55 @@
-'use strict'
+'use strict';
 
-let release, filterFile
+let release, filterFile;
 
-let data = {
+const data = {
   url: 'https://api.github.com/repos/aria2/aria2/releases',
   version: async (res, $, fns, choice = {}) => {
     if (typeof choice === 'function') {
-      choice = { filter: choice }
+      choice = { filter: choice };
     } else if (choice && (typeof choice === 'string' || choice instanceof Array || choice instanceof RegExp)) {
-      choice = [].concat(choice)
-      choice = { filterFile: choice[0], match: choice[1], prerelease: choice[2] }
+      choice = [].concat(choice);
+      choice = { filterFile: choice[0], match: choice[1], prerelease: choice[2] };
     }
-    filterFile = choice.filterFile
+    filterFile = choice.filterFile;
 
-    let filter = choice.filter || function (i) {
-      let matched = i.assets.some(j => j.name.match(choice.filterFile || /.zip$/))
+    const filter = choice.filter || function (i) {
+      const matched = i.assets.some(j => j.name.match(choice.filterFile || /.zip$/));
       if (matched) {
         if (choice.prerelease === undefined) {
-          return true
+          return true;
         } else {
-          return matched && i.prerelease === choice.prerelease
+          return matched && i.prerelease === choice.prerelease;
         }
       } else {
-        return false
+        return false;
       }
-    }
+    };
 
-    release = res.json.filter(filter)
+    release = res.json.filter(filter);
     if (release.length === 0) {
-      let baseurl = res.request.uri.href
-      let page = 2
+      const baseurl = res.request.uri.href;
+      let page = 2;
       while (release.length === 0) {
-        let res = await fns.req(`${baseurl}?page=${page}`)
-        if (res.json.length === 0) return false
-        release = res.json.filter(filter)
-        page = page + 1
+        const res = await fns.req(`${baseurl}?page=${page}`);
+        if (res.json.length === 0) return false;
+        release = res.json.filter(filter);
+        page = page + 1;
       }
     }
-    release = release[0]
+    release = release[0];
 
-    let text = release.tag_name
-    console.debug({ text, match: choice.match })
+    const text = release.tag_name;
+    console.debug({ text, match: choice.match });
     if (choice.match) {
-      return text.match(choice.match)[1]
+      return text.match(choice.match)[1];
     } else if (text.match(/^v(.*)$/)) {
-      return text.match(/^v(.*)$/)[1]
+      return text.match(/^v(.*)$/)[1];
     } else {
-      return text
+      return text;
     }
   },
   changelog: async (res, $) => release.body,
   download: async (res, $, fns, choice = filterFile) => release.assets.filter(i => i.name.match(choice || /.zip$/))[0].browser_download_url
-}
-module.exports = data
+};
+module.exports = data;

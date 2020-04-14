@@ -1,8 +1,8 @@
-'use strict'
+'use strict';
 
-let data = {
+const data = {
   url: 'https://www.instalki.pl/programy/pobierz/Windows/komunikatory/Discord.html',
   version: '.breadcrumbs',
   download: '#link'
-}
-module.exports = data
+};
+module.exports = data;
