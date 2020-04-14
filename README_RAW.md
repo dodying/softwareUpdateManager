@@ -46,6 +46,7 @@
 5. 模式优先级: `config.specialMode > config.mode = config.commercialSoftware`
 6. 安装方法并没有一一测试，如果自动安装失败，请尝试手动安装
 7. 如果你想安装同个软件到多个地方，请在`config.js`中编辑`profile`，并使用`node index --profile`
+8. 如果下载错误，请尝试挂代理下载
 
 #### 命令行
 
