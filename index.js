@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1849
+// @Version:            1.1.1892
 // @Author:             dodying
-// @Modified:           2020-3-1 10:41:53
+// @Modified:           2020-4-14 17:22:14
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -261,7 +261,12 @@ if (args.length) {
       let md = fse.readFileSync('README_RAW.md', 'utf-8');
       let mdEn = fse.readFileSync('README_en_RAW.md', 'utf-8');
       const search = fse.readdirSync('./js/search').map((item, order) => `${order + 1}. ${path.parse(item).name}`).join('\n');
-      let software = '';
+
+      // let filePre = 'https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software'
+      const filePre = 'software';
+
+      const software = [];
+      const softwareTagged = {};
 
       let orderForWithoutDownload = 0;
       let softwareWithoutDownload = '';
@@ -282,20 +287,20 @@ if (args.length) {
           const src = encodeURI(list[i]);
           let uri = info.url || Object.values(info.site)[0];
           const host = new URL(uri).host;
-          // let filePre = 'https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software'
-          const filePre = 'software';
 
-          software += `${i + 1}. `;
-          software += '[';
-          // software += `<img src="https://besticon-demo.herokuapp.com/icon?size=16..32..40&url=${host}" width="16"> `
-          software += `${name}](${uri})`;
+          let softwareThis = '';
+          // softwareThis += `${i + 1}. `;
+          softwareThis += '[';
+          // softwareThis += `<img src="https://besticon-demo.herokuapp.com/icon?size=16..32..40&url=${host}" width="16"> `
+          softwareThis += `${name}](${uri})`;
 
-          if (info.commercial === true || info.commercial === 3) software += ' :money_with_wings:';
-          if (info.commercial === 2) software += ' [Free Personal]';
-          if (info.commercial === 1) software += ' [Freemium]';
-          if (info.useProxy) software += ' :airplane:';
-          if (!info.install) software += ' :hand:';
-          if (info.fixedPath) software += ' :pushpin:';
+          if (info.commercial === true || info.commercial === 3) softwareThis += ' :money_with_wings:';
+          if (info.commercial === 2) softwareThis += ' [Free Personal]';
+          if (info.commercial === 1) softwareThis += ' [Freemium]';
+          if (info.useProxy) softwareThis += ' :airplane:';
+          if (!info.install) softwareThis += ' :hand:';
+          if (info.fixedPath) softwareThis += ' :pushpin:';
+          if (info.tags) softwareThis += ` <tags: ${[].concat(info.tags).map(i => `[${i}](#${i})`).join(', ')}>`;
 
           if (!(name in database) && descriptionUrl.includes(host)) {
             console.log(`Index-${i + 1}:\t${name}`);
@@ -329,9 +334,7 @@ if (args.length) {
             }
             fse.writeJSONSync('./software.json', database, { spaces: 2 });
           }
-          if (name in database) software += ' ' + database[name];
-
-          software += '\n';
+          if (name in database) softwareThis += ' ' + database[name];
 
           if (!info.download && !info.site) {
             softwareWithoutDownload += `${orderForWithoutDownload + 1}. `;
@@ -350,6 +353,15 @@ if (args.length) {
             softwareSpecialInstaller += '\n';
             orderForSpecialInstaller++;
           }
+
+          if (info.tags) {
+            for (const i of [].concat(info.tags)) {
+              if (!(i in softwareTagged)) softwareTagged[i] = [];
+              softwareTagged[i].push(softwareThis);
+            }
+          } else {
+            software.push(softwareThis);
+          }
         }
       }
 
@@ -365,7 +377,24 @@ if (args.length) {
       mdEn = mdEn.replace(/{software-special-installer}/g, softwareSpecialInstaller);
       fse.writeFileSync('README_en.md', mdEn);
 
-      fse.writeFileSync('SupportedSoftwares.md', software);
+      const mdSoftware = [
+        '<details>',
+        '<summary>TOC</summary>',
+        '',
+        Object.keys(softwareTagged).concat('UnTagged').map(i => `- [${i}](#${i})`).join('\n'),
+        '</details>',
+        '',
+        '---',
+        '',
+        Object.keys(softwareTagged).map(i => `### ${i}\n<details>\n\n${softwareTagged[i].map((j, index) => `${index + 1}. ${j}`).join('\n')}\n</details>`).join('\n\n'),
+        '\n',
+        '### UnTagged',
+        '<details>',
+        '',
+        software.map((i, index) => `${index + 1}. ${i}`).join('\n'),
+        '</details>'
+      ].join('\n');
+      fse.writeFileSync('SupportedSoftwares.md', mdSoftware);
       process.exit();
     })();
   } else if (args.includes('--search')) {

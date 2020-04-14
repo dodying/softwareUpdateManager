@@ -45,7 +45,8 @@ function reqOption (uriOrOption, optionUser = {}) {
     jar: config.cookies,
     strictSSL: false,
     resolveWithFullResponse: true,
-    simple: false
+    simple: false,
+    gzip: true
   }, option, { uri });
 
   uri = option.uri || option.url;
