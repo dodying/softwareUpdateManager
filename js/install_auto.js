@@ -59,7 +59,10 @@ const install = async (vars, excludes = undefined) => {
       });
     }
 
-    if (files.filter(i => i.name === '.rdata').length) {
+    if (vars.output.match(/\.nupkg$/) && files.filter(i => i.name.match(/lib\\net*/i)).length) {
+      console.log('nupkg2');
+      return require('./install')(vars, excludes, 'lib\\net*');
+    } else if (files.filter(i => i.name === '.rdata').length) {
       if (files.filter(i => i.name === '.rsrc\\version.txt').length) {
         cp.execSync(`plugins\\7z.exe e -sccUTF-8 -y -o"unzip\\" "${installerFile}" ".rsrc\\string.txt"`);
         let content = fse.readFileSync('./unzip/string.txt', 'utf-8');

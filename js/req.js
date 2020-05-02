@@ -83,7 +83,7 @@ function reqOption (uriOrOption, optionUser = {}) {
       }
     }
   }
-  console.warn(`${option.method}${option.proxy ? '+proxy' : ''}:\t${uri}`);
+  console.warn(`${option.method}${(option.proxy || option.agentClass) ? '+proxy' : ''}:\t${uri}`);
   if (option.form || option.body) console.debug({ body: option.form || option.body });
 
   config.uriLast = uri;
@@ -187,7 +187,7 @@ async function reqHEAD (uriOrOption, optionUser = {}) {
         console.debug(`Redirect:\t${this.uri.href}`);
       }).on('response', async res => {
         reses.push(res);
-        if (['application', 'binary'].some(i => res.headers['content-type'].match(i))) {
+        if (['application', 'binary'].some(i => res.headers['content-type'] && res.headers['content-type'].match(i)) || (res.headers['content-disposition'] && res.headers['content-disposition'].match(/^attachment/))) {
           req.abort();
           resolve(reses);
           return;

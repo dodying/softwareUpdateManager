@@ -14,8 +14,8 @@ const data = {
     downloadUrl = res1.request.uri.href;
 
     let filename;
-    if (res1.headers['content-disposition'] && res1.headers['content-disposition'].match(/filename="(.*)"/)) {
-      filename = res1.headers['content-disposition'].match(/filename="(.*)"/)[1];
+    if (res1.headers['content-disposition'] && res1.headers['content-disposition'].match(/filename="?(.*)"?/)) {
+      filename = res1.headers['content-disposition'].match(/filename="?(.*)"?/)[1];
     } else {
       filename = res1.request.uri.href;
     }

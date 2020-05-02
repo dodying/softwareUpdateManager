@@ -52,7 +52,10 @@ const data = {
         };
       });
     }
-    return fns.walkLink(res, fns, ...choice);
+    const url = await fns.walkLink(res, fns, ...choice);
+    const urlArr = url.split('/');
+    // return `https://master.dl.sourceforge.net/project/${urlArr[4]}/${urlArr.slice(6, -1).join('/')}`;
+    return `https://downloads.sourceforge.net/project/${urlArr[4]}/${urlArr.slice(6, -1).join('/')}`;
   }
 };
 module.exports = data;

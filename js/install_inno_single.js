@@ -5,9 +5,10 @@
  * @returns {boolean} if install completed
  * @param {string} info
  * @param {string} filter The filter to path
+ * @param {object} toDirUserDefined
  */
 
-const install = async (info, filter = /\.exe$/i) => {
+const install = async (info, filter = /\.exe$/i, toDirUserDefined) => {
   const path = require('path');
 
   const tmpNumber = Math.random().toString();
@@ -18,7 +19,7 @@ const install = async (info, filter = /\.exe$/i) => {
     path: path.resolve(tmpFolder, 'tmp.exe')
   });
 
-  const extract = require('./install_inno')(tmpInfo);
+  const extract = require('./install_inno')(tmpInfo, null, toDirUserDefined);
   if (extract) {
     let list = require('./walk')(tmpFolder);
     list = list.filter(i => path.basename(i).match(filter));

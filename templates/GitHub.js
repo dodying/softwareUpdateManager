@@ -26,9 +26,21 @@ const data = {
     }
   },
   changelog: '.release-header+.markdown-body',
-  download: async (res, $, fns, choice) => {
+  download: async (res, $, fns, choice = '[href$=".zip"]') => {
     choice = [].concat(choice);
-    const href = $(`a[href*="/releases/download/"]${choice[0] || '[href$=".zip"]'}`).eq(0).attr('href');
+    let href;
+    if (typeof choice[0] === 'boolean') {
+      href = $('a[href*="/archive/"][href$=".zip"]').eq(0).attr('href');
+    } else {
+      try {
+        const elem = $(`a[href*="/releases/download/"]${choice[0] || '[href$=".zip"]'}`);
+        if (elem.length === 0) throw new Error('');
+        href = elem.eq(0).attr('href');
+      } catch (error) {
+        const urls = $('a[href*="/releases/download/"]').toArray().map(i => $(i).attr('href'));
+        href = urls.find(i => i.split('/').slice(-1)[0].match(choice[0]));
+      }
+    }
     return [href, choice[1]];
   }
 };

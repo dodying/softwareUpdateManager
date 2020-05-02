@@ -64,8 +64,7 @@ const config = {
     timeout: 600, // 超时(单位秒，0表示无超时)
     proxy: 'protocol://username:password@hostname:port', // 代理，留空则不使用代理
     urlWithoutHeader: [ // 下载链接如果匹配任一，则下载时不包括Header，Header包括userAgent/referer
-    ],
-    sfMirror: 'nchc'// sf下载镜像
+    ]
   },
   preserveArchive: true, // 安装后是否保留安装包
   preserveOldArchive: false, // 当有新版本时，是否保留旧版本

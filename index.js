@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1892
+// @Version:            1.1.1971
 // @Author:             dodying
-// @Modified:           2020-4-14 17:22:14
+// @Modified:           2020-4-28 20:53:24
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -16,7 +16,6 @@ var _ = require('./config');
 // 导入原生模块
 const path = require('path');
 const cp = require('child_process');
-const url = require('url');
 const readline = require('readline');
 const util = require('util');
 
@@ -114,17 +113,25 @@ for (const i of ['log', 'warn', 'error', 'debug']) {
   };
 }
 for (const i in readlineSync) {
-  if (!i.match(/^(question|keyIn)/)) continue;
-  if (['keyInSelect', 'keyIn', 'question', 'prompt'].includes(i)) continue;
+  if (!i.match(/^(question|keyIn|prompt)/)) continue;
   const raw = readlineSync[i];
-  readlineSync[i] = text => {
-    const logFile = path.resolve(__dirname, 'index.log');
-    const colorRe = new RegExp('\x1b\\[\\d+m', 'gi');
-    const logPip = fse.createWriteStream(logFile, { flags: 'a' });
-    const msg = logModify(_color.warn, text);
-    if (_.debug) logPip.write(msg.replace(colorRe, '') + '\n');
-    return raw(msg);
-  };
+  if (i.match(/^(keyIn|question)./)) {
+    readlineSync[i] = (text, ...args) => {
+      const msg = logModify(_color.warn, text);
+      if (msg && _.debug) {
+        let msgString = msg;
+        if (msg instanceof Array) msgString = msgString.join('\n');
+        const logFile = path.resolve(__dirname, 'index.log');
+        const colorRe = new RegExp('\x1b\\[\\d+m', 'gi');
+        fse.appendFileSync(logFile, msgString.replace(colorRe, '') + '\n');
+      }
+      const title = process.title;
+      process.title = `[Wait] ${title}`;
+      const result = raw(msg, ...args);
+      process.title = title;
+      return result;
+    };
+  }
 }
 for (const i in _.defaultOptions) util.inspect.defaultOptions[i] = _.defaultOptions[i];
 
@@ -279,7 +286,7 @@ if (args.length) {
 
       // let list = fse.readdirSync('software')
       const list = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/'));
-      const descriptionUrl = ['github.com', 'api.github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com', 'www.nirsoft.net', 'www.sordum.org', 'docs.microsoft.com', 'www.the-sz.com', 'www.diskinternals.com', 'www.glarysoft.com', 'www.abelssoft.de', 'www.jam-software.com', 'www.sterjosoft.com', 'www.wisecleaner.com', 'vovsoft.com', 'www.fosshub.com'];
+      const descriptionUrl = ['github.com', 'api.github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com', 'www.nirsoft.net', 'www.sordum.org', 'docs.microsoft.com', 'www.the-sz.com', 'www.glarysoft.com', 'www.abelssoft.de', 'www.jam-software.com', 'www.sterjosoft.com', 'www.wisecleaner.com', 'vovsoft.com', 'www.fosshub.com', 'chocolatey.org'];
       for (let i = 0; i < list.length; i++) {
         if (fse.statSync(path.resolve('software', list[i])).isFile()) {
           const info = require(path.resolve('software', list[i]));
@@ -327,8 +334,10 @@ if (args.length) {
                 description = matched ? matched[1] : '';
               } else if (uri.match(/abelssoft.de/)) {
                 description = description.replace(/(✓|✔).*/, '');
+              } else if (uri.match(/chocolatey.org/)) {
+                description = $('#description').eq(0).text();
               }
-              database[name] = description.replace(/[\r\n]+/, ' ').trim();
+              database[name] = (description || '').trim().replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
             } else {
               console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
             }
@@ -554,7 +563,7 @@ function spawnSync (...argsForSpwan) {
 
 function getHash (file, algorithm) {
   // Hash algorithms: MD2 MD4 MD5 SHA1 SHA256 SHA384 SHA512
-  return cp.spawnSync('certutil', ['-hashfile', file, algorithm]).output[1].toString().split(/[\r\n]+/)[1];
+  return cp.spawnSync(path.resolve(process.env.SystemRoot, 'System32', 'certutil.exe'), ['-hashfile', file, algorithm]).output[1].toString().split(/[\r\n]+/)[1];
 }
 
 function ExtendSoftware (data) {
@@ -632,7 +641,7 @@ function ExtendSoftware (data) {
 }
 
 function getPath (cmd) {
-  return cp.spawnSync('cmd', ['/c', `echo "${cmd}"`], {
+  return cp.spawnSync(process.env.comspec, ['/c', `echo "${cmd}"`], {
     env: Object.assign({}, process.env, {
       'ProgramFiles(x86)': process.env['ProgramFiles(x86)'] || process.env.ProgramFiles
     })
@@ -1127,7 +1136,7 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
     return null;
   }
 
-  download = url.resolve(res.request.uri.href, download);
+  download = new URL(download, res.request.uri.href).href;
 
   if (ext) {
   } else if (software[i].download.output) {
@@ -1154,17 +1163,13 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
 
   if (!ext) return null;
 
-  if (url.parse(download).host === 'sourceforge.net' && download.match(/\/download$/) && _.download.sfMirror) download = download + '?use_mirror=' + _.download.sfMirror;
   let output = iEscaped + '-' + versionLatest + ext.toLowerCase();
   output = path.resolve(_.archivePath, output);
-  console.log(`Download:\t${download}`);
-  console.log(`Output:\t${output}`);
 
   if (JSON.parse(JSON.stringify(req.config.get('cookies')))._jar.cookies.length) {
     fse.writeFileSync('cookies.txt', JSON.parse(JSON.stringify(req.config.get('cookies')))._jar.cookies.map(i => [`.${i.domain}`, i.hostOnly ? 'TRUE' : 'FALSE', i.path, i.secure ? 'TRUE' : 'FALSE', i.expires ? Math.round(new Date(i.expires).getTime() / 1000) : '0', i.key, i.value].join('\t')).join('\r\n'));
   }
 
-  if (['test'].includes(mode)) return null;
   const args = [];
   let end;
 
@@ -1172,12 +1177,16 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   const _prxoy = _.download.proxy;
   const _withProxyRule = _.urlWithProxy.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter));
   const _withProxyMode = _.useProxy === 2 || (_.useProxy === 1 && software[i].useProxy);
-  const _withProxyAuto = req.config.get('proxyList')[url.parse(download).hostname] || req.config.get('proxyList')[url.parse(software[i].url).hostname];
+  const _withProxyAuto = req.config.get('proxyList')[new URL(download).hostname] || req.config.get('proxyList')[new URL(software[i].url).hostname];
   const _withProxy = _withProxyRule || _withProxyMode || _withProxyAuto;
   const _withoutProxy = _.urlWithoutProxy.some(urlfilter => download.match(urlfilter));
   const _withProxyForce = _.urlWithProxyForce.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter));
   const _withoutProxyForce = _.urlWithoutProxyForce.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter));
   const _useProxy = _prxoy && (_withProxyForce || (_withProxy && !_withoutProxy)) && !_withoutProxyForce;
+
+  console.log(`Download${_useProxy ? '+proxy' : ''}:\t${download}`);
+  console.log(`Output:\t${output}`);
+  if (['test'].includes(mode)) return null;
 
   console.log();
   if (_.download.method === 'request') {
