@@ -5,8 +5,8 @@ const data = {
   changelog: 'p:has(#whatsnew)+ul',
   download: async (res, $, fns, choice) => {
     let link;
-    if ($('.download_options .multi_line>li>a').length) {
-      let links = $('.download_options .multi_line>li>a').toArray().map(i => {
+    if ($('.download_options li>a').length) {
+      let links = $('.download_options li>a').toArray().map(i => {
         return {
           text: $(i).text().trim(),
           link: $(i).attr('href')

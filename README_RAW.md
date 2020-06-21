@@ -151,7 +151,9 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
     init: function (info, doc, curPageUrl) {}
   }
 ```
-
+6. 依据特定方式直接安装指定版本的软件（当前为只能安装最新版本）
+7. 无需下载software文件夹直接安装
+8. 只有软件不存在时才安装（适用于不常更新/会自动更新的软件）
 
 #### 软件示例
 

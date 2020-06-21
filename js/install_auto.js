@@ -95,6 +95,8 @@ const install = async (vars, excludes = undefined) => {
     } else if (files.filter(i => i.name.match(/^u\d*$/i)).length) {
       console.log('WIX');
       return require('./install_wix')(vars, excludes);
+    } else if (['.jar'].includes(path.extname(installerFile))) {
+      return require('./install_single')(vars);
     } else {
       console.log('Normal Zip or NSIS');
       return require('./install')(vars, excludes);

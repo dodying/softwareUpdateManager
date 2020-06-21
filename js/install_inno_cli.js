@@ -6,14 +6,13 @@
  * @param {string} info
  * @param {string[]} args
  * @param {object} options
- * @param {function} callback
  */
 
-const install = async (info, args, options = {}, callback) => {
+const install = async (info, args, options = {}) => {
   // http://www.jrsoftware.org/ishelp/topic_setupcmdline.htm
   args = [].concat('/SP-', '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS', args || [], '/DIR="{dir}"');
   options = Object.assign({ wait: true, shell: true }, options);
-  return require('./install_cli')(info, null, args, options, callback);
+  return require('./install_cli')(info, null, args, options);
 };
 
 module.exports = install;

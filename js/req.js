@@ -136,7 +136,7 @@ async function req (uriOrOption, optionUser = {}) {
       if (res.body) {
         try {
           res.json = JSON.parse(res.body);
-          console.debug(res.json);
+          // console.debug(res.json);
         } catch (error) {}
       }
       delete config.retryList[uri];

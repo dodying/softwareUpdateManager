@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.1971
+// @Version:            1.1.2091
 // @Author:             dodying
-// @Modified:           2020-4-28 20:53:24
+// @Modified:           2020/6/15 17:17:28
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -140,7 +140,7 @@ for (const i in _.defaultOptions) util.inspect.defaultOptions[i] = _.defaultOpti
 _.archivePath = path.resolve(__dirname, _.archivePath);
 _.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com');
 
-const exts = ['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz', '.iso', '.nupkg'];
+const exts = ['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz', '.nupkg', '.dll', '.appx', '.appxbundle', '.msix', '.msixbundle'];
 const exts2 = ['.gz', '.bz2', '.xz'];
 
 const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins';
@@ -313,12 +313,20 @@ if (args.length) {
             console.log(`Index-${i + 1}:\t${name}`);
             if (uri.match(/api\.github\.com\/repos\/(.*)\/releases/)) {
               const matched = uri.match(/api\.github\.com\/repos\/(.*)\/releases/)[1];
-              uri = `https://github.com/${matched}/releases/`;
+              uri = `https://github.com/${matched}/releases/latest`;
             }
+            // if (uri.match(/\/github.com\/(.*?)\/releases/)) { // 记录github
+            //   fse.appendFileSync('github.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
+            // }
 
             let res = await req(uri, { useProxy: info.useProxy });
             if (res instanceof Error || !res || res.statusCode >= 300 || res.statusCode < 200) res = await req(uri, { useProxy: !info.useProxy });
             if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
+              // if (uri.match(/\/github.com\/(.*?)\/releases/)) { // 记录github
+              //   const repo = uri.match(/\/github.com\/(.*?)\/releases/)[0];
+              //   const repoNew = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[0];
+              //   if (repo !== repoNew) fse.appendFileSync('github.txt', 'Change:' + uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
+              // }
               const $ = cheerio.load(res.body);
               let description = $('[itemprop="description"]').text() || $('[name="description"]').attr('content') || $('[property="og:description"]').attr('content') || $('[name="twitter:description"]').attr('content') || '';
               if (uri.match(/\/github.com\/(.*?)\/releases/)) {
@@ -330,14 +338,26 @@ if (args.length) {
               } else if (uri.match(/majorgeeks.com\/mg\/getmirror/)) {
                 description = $('.geekyinsidecontent').eq(0).text();
               } else if (uri.match(/nirsoft.net/)) {
-                const matched = res.body.replace(/[\r\n]+/g, '').match(/<h4 class="utilsubject">Description<\/h4>(.*?)<p>/);
+                const matched = res.body.replace(/[\r\n]+/g, ' ').match(/<h4 class="utilsubject">Description<\/h4>(.*?)<.*?>/);
                 description = matched ? matched[1] : '';
               } else if (uri.match(/abelssoft.de/)) {
                 description = description.replace(/(✓|✔).*/, '');
               } else if (uri.match(/chocolatey.org/)) {
                 description = $('#description').eq(0).text();
               }
-              database[name] = (description || '').trim().replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+              if (description) {
+                description = description.trim().replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+                const maxLength = 200;
+                if (description.length > maxLength) {
+                  description = description.split('').reverse().join('');
+                  while (description.match(/^.*?[A-Z]\s([.?!])|^..*?([。？！])/) && description.length > maxLength) {
+                    description = description.replace(/^.*?[A-Z]\s([.?!])|^..*?([。？！])/, '$1$2');
+                  }
+                  description = description.split('').reverse().join('');
+                  if (description.length > maxLength) description = description.substr(0, maxLength);
+                }
+                database[name] = description;
+              }
             } else {
               console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
             }
@@ -480,6 +500,7 @@ softwareList.forEach(i => {
   if (softwareFilter(i)) {
     if (fse.existsSync(`./software/${raw}.js`)) {
       software[i] = Object.assign({}, require(`./software/${raw}.js`));
+      software[i].raw = JSON.parse(JSON.stringify(software[i]));
 
       if (version) {
         if (software[i].other[version]) {
@@ -669,7 +690,7 @@ async function getLatestVersion (i) {
         });
       }
 
-      if ($('title').text().trim()) console.debug(`Title:\t${$('title').text().trim()}`);
+      // if ($('title').text().trim()) console.debug(`Title:\t${$('title').text().trim()}`);
 
       let version;
       if ('selector' in software[i].version) {
@@ -692,7 +713,7 @@ async function getLatestVersion (i) {
           console.error(`Error:\tAttribute "${software[i].version.attr}" Empty when "version"`);
           return null;
         }
-        console.debug({ version });
+        // console.debug({ version });
         const regexp = software[i].version.match || /(\d+[\d.]+\d+)/;
         const matched = version.match(regexp);
         if (!matched) {
@@ -721,7 +742,7 @@ async function getLatestVersion (i) {
         console.error('Error:\tNo "selector"/"func" in "version"');
         return null;
       }
-      if (version.match(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i)) console.debug(`Version-Raw:\t${version}`);
+      // if (version.match(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i)) console.debug(`Version-Raw:\t${version}`);
       version = version.replace(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i, '$1.$4').replace(/[\\/:*?"<>|]/g, '-').trim();
       return { version, res, $ };
     })();
@@ -798,7 +819,7 @@ async function getLatestVersionChangelog (i, versionLatest, res, $) {
 
     if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
       $ = cheerio.load(res.body);
-      if ($('title').text().trim()) console.debug(`Title:\t${$('title').text().trim()}`);
+      // if ($('title').text().trim()) console.debug(`Title:\t${$('title').text().trim()}`);
     } else {
       if (res) {
         console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
@@ -876,7 +897,7 @@ async function getLatestVersionChangelog (i, versionLatest, res, $) {
     if (software[i].changelog.split) {
       const lineArr = changelog.replace(/[\u0000\r]/g, '').trim().split(/\n/);
       const split = lineArr.filter(line => line.match(software[i].changelog.match));
-      console.debug({ lineArr, split });
+      // console.debug({ lineArr, split });
       const start = lineArr.indexOf(split[0]);
       if (start === -1) return null;
       let end = lineArr.indexOf(split[1]);
@@ -1184,10 +1205,24 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
   const _withoutProxyForce = _.urlWithoutProxyForce.some(urlfilter => download.match(urlfilter) || software[i].url.match(urlfilter));
   const _useProxy = _prxoy && (_withProxyForce || (_withProxy && !_withoutProxy)) && !_withoutProxyForce;
 
+  if (['test'].includes(mode)) {
+    const res = await reqHEAD(download, { useProxy: _useProxy, withoutHeader: _withoutHeader });
+    if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
+      if (res.headers['content-length']) {
+        const len = parseInt(res.headers['content-length'], 10);
+        const sizeFormats = ['bytes', 'KB', 'MB', 'GB'];
+        console.log(`File Size:\t${valueHumanReadable(len, sizeFormats, 1024, '{-1.2} {-1f}')}`);
+      } else {
+        console.log('File Size:\tUnknown');
+      }
+    } else if (res) {
+      console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
+    }
+    return null;
+  }
+
   console.log(`Download${_useProxy ? '+proxy' : ''}:\t${download}`);
   console.log(`Output:\t${output}`);
-  if (['test'].includes(mode)) return null;
-
   console.log();
   if (_.download.method === 'request') {
     software[i].retry = 0;
@@ -1351,14 +1386,14 @@ async function installLatestVersion (i, output) {
 
   if (software[i].fixedPath) {
     if (!_.ignoreWarn.fixedPath && !readlineSync.keyInYNStrict('Continue to install?')) return false;
-    if (!fse.existsSync(software[i].parentPath)) {
-      try {
-        fse.mkdirsSync(software[i].parentPath);
-      } catch (error) {
-        console.error(`Error:\tCan't Create Directory "${software[i].parentPath}"`);
-        return false;
-      }
-    }
+    // if (!fse.existsSync(software[i].parentPath)) {
+    //   try {
+    //     fse.mkdirsSync(software[i].parentPath);
+    //   } catch (error) {
+    //     console.error(`Error:\tCan't Create Directory "${software[i].parentPath}"`);
+    //     return false;
+    //   }
+    // }
   }
 
   if (!_.ignoreWarn.preferPath && software[i].preferPath && software[i].path.toLowerCase().substr(-software[i].preferPath.length).replace(/\\/g, '/') !== software[i].preferPath.toLowerCase()) {
@@ -1497,6 +1532,8 @@ async function init () {
   for (const i in software) {
     doBeforeExit();
 
+    fns.info = software[i];
+
     const iEscaped = i.replace(/[:*?"<>|]/g, '-');
     const iRaw = i.match(/(.*):(.*)$/) ? i.match(/(.*):(.*)$/)[1] : i;
 
@@ -1626,20 +1663,7 @@ async function init () {
     const siteList = 'site' in software[i] ? Object.keys(software[i].site) : [];
     let siteNow;
     let result;
-    if (!software[i].url && siteList.length) {
-      siteNow = Object.keys(software[i].site)[0];
-      software[i].url = software[i].site[siteNow];
-
-      let info = require('./templates/' + siteNow);
-      info = ExtendSoftware(info);
-      const preserve = ['useProxy', 'withoutHeader', 'version', 'changelog'];
-      for (const key of preserve) {
-        software[i][key] = info[key] || software[i][key];
-      }
-      if (info.download && (software[i].download === undefined || !software[i].download.plain)) software[i].download = info.download;
-      console.log(`Site:\t${siteNow}`);
-    }
-    result = await getLatestVersion(i);
+    result = software[i].url ? await getLatestVersion(i) : null;
     while (!result && siteList.length) {
       if (siteList.indexOf(siteNow) + 1 === siteList.length) {
         break;
@@ -1648,6 +1672,7 @@ async function init () {
         software[i].url = software[i].site[siteNow];
 
         let info = require('./templates/' + siteNow);
+        if (info.url && typeof info.url === 'function') software[i].url = await info.url(software[i].url);
         info = ExtendSoftware(info);
         const preserve = ['useProxy', 'withoutHeader', 'version', 'changelog'];
         for (const key of preserve) {
@@ -1663,6 +1688,7 @@ async function init () {
 
     database[i].lasttime = getNow();
     console.log(`Latest-Version:\t${versionLatest}`);
+    process.title = `${i}-v${versionLatest}`;
 
     if (['check'].includes(mode)) {
       database[i].md5 = getHash(iPath, 'md5');

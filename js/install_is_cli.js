@@ -6,15 +6,14 @@
  * @param {string} info
  * @param {string[]} args
  * @param {object} options
- * @param {function} callback
  */
 
-const install = async (info, args, options = {}, callback) => {
+const install = async (info, args, options = {}) => {
   // https://helpnet.flexerasoftware.com/installshield19helplib/helplibrary/IHelpSetup_EXECmdLine.htm
   // https://www.itninja.com/static/090770319967727eb89b428d77dcac07.pdf
   args = [].concat('/v"INSTALLDIR=\\"{dir}""', args || []);
   options = Object.assign({ wait: true, shell: true }, options);
-  return require('./install_cli')(info, null, args, options, callback);
+  return require('./install_cli')(info, null, args, options);
 };
 
 module.exports = install;
