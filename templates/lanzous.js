@@ -19,7 +19,7 @@ const data = {
       uri: 'https://www.lanzous.com/filemoreajax.php',
       form
     });
-    info = res1.json.text.filter(i => i.name_all.match(match[0]))[0];
+    info = res1.json.text.find(i => i.name_all.match(match[0]));
     return info.name_all.match(match[1] || match[0])[1];
   }
   // download: async (res, $, fns, choice) => {

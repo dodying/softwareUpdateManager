@@ -57,6 +57,7 @@ const data = {
       }
     }
     release = release[0];
+    if (res.json.indexOf(release) > 5) console.warn(`Index:\t${res.json.indexOf(release)}`);
 
     // if (res.json.indexOf(release) !== 0) {
     //   if (fns.info.other && Object.values(fns.info.other).findIndex(i => i.site && i.site.GitHub.match(/\/releases$/)) >= 0) console.log('Release:\tBeta');

@@ -46,7 +46,8 @@ const config = {
     userAgent: 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36',
     retry: 5, // 重试次数(0表示不重试)
     timeout: 60, // 请求超时(单位秒)
-    proxy: 'protocol://username:password@hostname:port' // 代理，留空则不使用代理 protocol: socks5/http
+    proxy: 'protocol://username:password@hostname:port', // 代理，留空则不使用代理 protocol: socks5/http
+    github: '' // Authorization token，如无则留空
   },
   download: { // 下载相关
     /**

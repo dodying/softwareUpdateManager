@@ -23,7 +23,9 @@ const data = {
 
     let version = decodeURIComponent(filename).match(choice.match || /(\d+[\d.]+\d+)/);
     if (choice.replace) {
-      version = version[0].replace(choice.match, choice.replace);
+      let [index, find, replace] = [0, choice.match, choice.replace];
+      if (choice.replace instanceof Array) [index, find, replace] = choice.replace;
+      version = version[index].replace(find, replace);
     } else {
       version = version[1];
     }

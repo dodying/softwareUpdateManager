@@ -1,9 +1,9 @@
 // ==Headers==
 // @Name:               softwareUpdateManager
 // @Description:        软件更新管理器
-// @Version:            1.1.2091
+// @Version:            1.1.2190
 // @Author:             dodying
-// @Modified:           2020/6/15 17:17:28
+// @Modified:           2020/12/11 10:07:15
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
 // @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
@@ -31,6 +31,7 @@ const notifier = require('node-notifier');
 const merge = require('deepmerge');
 // const iconv = require('iconv-lite')
 const html2Text = require('html-to-text');
+
 const walk = require('./js/walk');
 const replace = require('./js/replaceWithDict');
 const req = require('./js/req');
@@ -140,7 +141,7 @@ for (const i in _.defaultOptions) util.inspect.defaultOptions[i] = _.defaultOpti
 _.archivePath = path.resolve(__dirname, _.archivePath);
 _.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com');
 
-const exts = ['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz', '.nupkg', '.dll', '.appx', '.appxbundle', '.msix', '.msixbundle'];
+const exts = ['.zip', '.7z', '.exe', '.msi', '.rar', '.jar', '.tar', '.gz', '.bz2', '.xz', '.nupkg', '.dll', '.appx', '.appxbundle', '.msix', '.msixbundle', '.iso'];
 const exts2 = ['.gz', '.bz2', '.xz'];
 
 const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins';
@@ -315,18 +316,22 @@ if (args.length) {
               const matched = uri.match(/api\.github\.com\/repos\/(.*)\/releases/)[1];
               uri = `https://github.com/${matched}/releases/latest`;
             }
-            // if (uri.match(/\/github.com\/(.*?)\/releases/)) { // 记录github
-            //   fse.appendFileSync('github.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
-            // }
+            // TODO RECORD GITHUB
+            if (uri.match(/\/github.com\/(.*?)\/releases/)) {
+              fse.appendFileSync('github.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
+            }
+            // TODO RECORD GITHUB
 
             let res = await req(uri, { useProxy: info.useProxy });
             if (res instanceof Error || !res || res.statusCode >= 300 || res.statusCode < 200) res = await req(uri, { useProxy: !info.useProxy });
             if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
-              // if (uri.match(/\/github.com\/(.*?)\/releases/)) { // 记录github
-              //   const repo = uri.match(/\/github.com\/(.*?)\/releases/)[0];
-              //   const repoNew = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[0];
-              //   if (repo !== repoNew) fse.appendFileSync('github.txt', 'Change:' + uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
-              // }
+              // TODO RECORD GITHUB
+              if (uri.match(/\/github.com\/(.*?)\/releases/)) {
+                const repo = uri.match(/\/github.com\/(.*?)\/releases/)[0];
+                const repoNew = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[0];
+                if (repo !== repoNew) fse.appendFileSync('github-change.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
+              }
+              // TODO RECORD GITHUB
               const $ = cheerio.load(res.body);
               let description = $('[itemprop="description"]').text() || $('[name="description"]').attr('content') || $('[property="og:description"]').attr('content') || $('[name="twitter:description"]').attr('content') || '';
               if (uri.match(/\/github.com\/(.*?)\/releases/)) {
@@ -674,7 +679,15 @@ function getPath (cmd) {
 async function getLatestVersion (i) {
   const iEscaped = i.replace(/[:*?"<>|]/g, '-');
 
-  const res = await req(software[i].url, { useProxy: software[i].useProxy });
+  const reqOption = { uri: software[i].url };
+
+  if (software[i].url.match(/:\/\/api.github.com\//) && _.request.github) {
+    if (!reqOption.headers) reqOption.headers = {};
+    reqOption.headers.Authorization = `token ${_.request.github}`;
+    reqOption.headers['User-Agent'] = _.request.userAgent;
+  }
+
+  const res = await req(reqOption, { useProxy: software[i].useProxy });
   let returnValue;
 
   if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
@@ -742,6 +755,11 @@ async function getLatestVersion (i) {
         console.error('Error:\tNo "selector"/"func" in "version"');
         return null;
       }
+      if (!version) {
+        console.error('Error:\tGet nullish value in "version"');
+        return null;
+      }
+      if (typeof version !== 'string') version = String(version);
       // if (version.match(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i)) console.debug(`Version-Raw:\t${version}`);
       version = version.replace(/^(\d+[\d.]+\d+)( |-)Build( |-)(\d+)$/i, '$1.$4').replace(/[\\/:*?"<>|]/g, '-').trim();
       return { version, res, $ };
@@ -935,7 +953,7 @@ function valueHumanReadable (value, formats, steps, output) {
 
     index = index + 1;
   }
-  arr.push(parseInt(outputRaw) % steps[index]);
+  arr.push(steps[index] ? parseInt(outputRaw) % steps[index] : parseInt(outputRaw));
   for (let i = 0; i < formats.length; i++) {
     obj[i] = arr[i] || 0;
     obj[i.toString() + 'f'] = formats[i];
@@ -1138,7 +1156,7 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
       return null;
     }
 
-    download = software[i].download.match ? download.match(software[i].download.match)[1] : download;
+    download = software[i].download.match && download.match(software[i].download.match) ? download.match(software[i].download.match)[1] : download;
   } else if ('func' in software[i].download) {
     try {
       download = await software[i].download.func(res, $, fns, software[i].downloadChoice);
@@ -1215,9 +1233,25 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
       } else {
         console.log('File Size:\tUnknown');
       }
+
+      // TODO SOFTWARE TEST
+      // software[i]._test_ok = true;
+      // TODO SOFTWARE TEST
     } else if (res) {
       console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
     }
+
+    // TODO SOFTWARE TEST
+    // const name = i.split(':')[0];
+    // const similarSoftwares = Object.entries(software).filter(arr => arr[0].split(':')[0] === name);
+
+    // if (fse.existsSync(`software/${name}.js`) && similarSoftwares.indexOf(similarSoftwares.find(arr => arr[0] === i)) + 1 === similarSoftwares.length && similarSoftwares.every(arr => arr[1]._test_ok)) {
+    //   const pathnew = `software-${similarSoftwares.every(arr => arr[1]._test_ok) ? 'ok' : 'test'}/${name}.js`;
+    //   if (!fse.existsSync(path.dirname(pathnew))) fse.mkdirsSync(path.dirname(pathnew));
+    //   fse.renameSync(`software/${name}.js`, pathnew);
+    // }
+    // TODO SOFTWARE TEST
+
     return null;
   }
 
@@ -1239,15 +1273,15 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
     }
     if (_useProxy) {
       args.push(`--all-proxy=${_.download.proxy}`);
-      args.push('--check-certificate=false'); // Verify the peer using certificates
     }
+    args.push('--check-certificate=false'); // Verify the peer using certificates
     args.push('--remote-time'); // Retrieve timestamp of the remote file from the remote HTTP/FTP server and if it is available, apply it to the local file.
     args.push('--auto-file-renaming=false'); // Rename file name if the same file already exists.
     args.push('--allow-overwrite=true'); // Restart download from scratch if the corresponding control file doesn’t exist.
     args.push('--file-allocation=none'); // Specify file allocation method.
     args.push('--min-split-size=1M'); // aria2 does not split less than 2*SIZE byte range.
-    args.push('--max-connection-per-server=16'); // The maximum number of connections to one server for each download.
-    args.push('--split=16'); // Download a file using N connections.
+    args.push('--max-connection-per-server=64'); // The maximum number of connections to one server for each download.
+    args.push('--split=64'); // Download a file using N connections.
     args.push('--console-log-level=error'); // Set log level to output to console.
     if (_.debug) args.push(`--log=debug\\${iEscaped}-aria2c.log`); // The file name of the log file.
     args.push(`--out=${path.relative('', output)}`, download);
@@ -1270,7 +1304,7 @@ async function downloadLatestVersion (i, versionLatest, res, $) {
     }
     args.push('--no-verbose'); // turn off verboseness, without being quiet
     args.push('--show-progress'); // display the progress bar in any verbosity mode
-    if (_.debug) args.push('--debug', '--verbose', `--append-output=debug\\${iEscaped}-wget.log`); // append messages to FILE
+    if (_.debug) args.push('--debug', `--append-output=debug\\${iEscaped}-wget.log`); // append messages to FILE
     args.push(`--output-document=${output}`, download);
     end = await spawnSync('plugins\\wget.exe', args);
   } else if (_.download.method === 'curl') {
@@ -1432,8 +1466,12 @@ async function installLatestVersion (i, output) {
 
   if (_.specialMode[i] === 3 || (!software[i].commercial && _.mode === 3) || (software[i].commercial && _.commercialMode === 3)) {
     if (software[i].install.toString().match(/install_(|\w+_)single/)) {
+      const killed = require('./js/kill_single')(info.parentPath);
+      if (!killed) return false;
       fse.removeSync(software[i].path);
     } else {
+      const killed = require('./js/kill')(info.parentPath);
+      if (!killed) return false;
       fse.removeSync(software[i].parentPath);
     }
   }
@@ -1463,7 +1501,7 @@ function doBeforeExit () {
   try {
     fse.removeSync(path.resolve(_.archivePath, 'unzip'));
     fse.emptyDirSync('./unzip');
-  } catch (error) {}
+  } catch (error) { }
 }
 
 // Main
@@ -1678,7 +1716,7 @@ async function init () {
         for (const key of preserve) {
           software[i][key] = info[key] || software[i][key];
         }
-        if (info.download && (software[i].download === undefined || !software[i].download.plain)) software[i].download = info.download;
+        if (info.download && (!software[i].download || !software[i].download.plain)) software[i].download = info.download;
         console.log(`Site:\t${siteNow}`);
         result = await getLatestVersion(i);
       }

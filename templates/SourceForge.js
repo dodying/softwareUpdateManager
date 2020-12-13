@@ -15,14 +15,14 @@ const data = {
         match: /(\d+[\d.-]+\d+)/
       });
     } else {
-      choice = choice.map(i => {
+      choice = choice.map((i, index) => {
         i = [].concat(i);
         return {
           match: i[0],
           sort: i[1] || true,
           matchCheck: i[2],
           selector: i[3] || '[headers="files_name_h"]>a',
-          attr: i[4] || 'text'
+          attr: i[4] || index === choice.length - 1 ? 'text' : 'href'
         };
       });
     }

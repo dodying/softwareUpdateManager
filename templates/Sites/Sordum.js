@@ -1,8 +1,8 @@
 'use strict';
 
 const data = {
-  version: '.entry-title',
-  changelog: '.entry-content>p:contains("What is New"),.entry-content>p:contains("What’s New"),.entry-content>p:contains("What is new"),.entry-content>p:contains("Changelog"),',
+  version: (res, $) => $('.entry-title').text().match(/v([\d.]+)/) ? $('.entry-title').text().match(/v([\d.]+)/)[1] : '1',
+  changelog: '.entry-content>p:has([style="color: #008000;"]):not(:has(a[href*="virustotal.com"]))',
   download: async (res, $, fns, choice) => 'https://www.sordum.org/files/downloads.php' + $('[href*="/downloads/?"]').eq(0).attr('href').match(/\?.*$/)[0]
 };
 module.exports = data;

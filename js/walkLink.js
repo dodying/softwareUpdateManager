@@ -68,7 +68,10 @@ const walkLink = async (link, fns, ...selectors) => {
 
   for (let i = 0; i < selectors.length;) {
     uriLast = new URL(uri[i], uriLast).href;
-    if (uri[i] && (!res[i] || res[i].request.uri.href !== uri[i])) res[i] = await fns.req(uriLast);
+    if (uri[i] && (!res[i] || res[i].request.uri.href !== uri[i])) {
+      res[i] = await fns.req(uriLast);
+      uriLast = res[i].request.uri.href;
+    }
     const $ = fns.cheerio.load(res[i].body);
     if (!order[i]) order[i] = 0;
 

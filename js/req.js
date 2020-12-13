@@ -1,7 +1,5 @@
 'use strict';
 
-const url = require('url');
-
 const request = require('request');
 const requestPromise = require('request-promise');
 const Agent = require('socks5-http-client/lib/Agent');
@@ -39,7 +37,8 @@ function reqOption (uriOrOption, optionUser = {}) {
       'User-Agent': config._.request.userAgent,
       Accept: 'text/plain, application/json, */*',
       // 'Accept-Language': '*;q=0.5',
-      Referer: config.uriLast && new URL(config.uriLast).hostname === new URL(uri).hostname ? config.uriLast : uri
+      Referer: config.uriLast && new URL(config.uriLast).hostname === new URL(uri).hostname ? config.uriLast : uri,
+      'Upgrade-Insecure-Requests': 1
     },
     timeout: config._.request.timeout * 1000,
     jar: config.cookies,
@@ -56,16 +55,16 @@ function reqOption (uriOrOption, optionUser = {}) {
     useProxy = false;
   } else if (config._.urlWithProxyForce.some(urlfilter => uri.match(urlfilter))) {
     useProxy = true;
-  } else if (uri !== config.uriLast || !(url.parse(uri).hostname in config.proxyList)) {
+  } else if (uri !== config.uriLast || !(new URL(uri).hostname in config.proxyList)) {
     if (config._.urlWithoutProxy.some(urlfilter => uri.match(urlfilter))) {
       useProxy = false;
     } else if (config._.urlWithProxy.some(urlfilter => uri.match(urlfilter)) || config._.useProxy === 2 || (config._.useProxy === 1 && useProxy)) {
       useProxy = true;
     }
   } else {
-    useProxy = useProxy === undefined || (config._.autoToggleProxy && config.proxyList[url.parse(uri).hostname]) ? !config.proxyList[url.parse(uri).hostname] : useProxy;
+    useProxy = useProxy === undefined || (config._.autoToggleProxy && config.proxyList[new URL(uri).hostname]) ? !config.proxyList[new URL(uri).hostname] : useProxy;
   }
-  config.proxyList[url.parse(uri).hostname] = useProxy;
+  config.proxyList[new URL(uri).hostname] = useProxy;
 
   if (useProxy && config._.request.proxy && config._.request.proxy.match(/(http|socks5):\/\/((.*?):(.*?)@)?(.*?):(\d+)/i)) {
     const [, protocol,, username, password, hostname, port] = config._.request.proxy.match(/(http|socks5):\/\/((.*?):(.*?)@)?(.*?):(\d+)/i);
@@ -111,7 +110,7 @@ async function req (uriOrOption, optionUser = {}) {
 
       let body;
       try {
-        body = iconv.decode(res.body, charset);
+        body = iconv.decode(res.body, iconv.encodingExists(charset) ? charset : 'utf-8');
       } catch (error) {
         body = iconv.decode(res.body, 'utf-8');
       }
@@ -124,7 +123,7 @@ async function req (uriOrOption, optionUser = {}) {
           charset = $('meta[charset]').attr('charset');
         }
         try {
-          body = iconv.decode(res.body, charset);
+          body = iconv.decode(res.body, iconv.encodingExists(charset) ? charset : 'utf-8');
         } catch (error) {
           body = iconv.decode(res.body, 'utf-8');
         }
@@ -133,6 +132,7 @@ async function req (uriOrOption, optionUser = {}) {
     }
     const succeed = typeof optionUser.check === 'function' ? optionUser.check(res) : res.statusCode >= 200 || res.statusCode < 300;
     if (succeed) {
+      config.uriLast = res.request.uri.href;
       if (res.body) {
         try {
           res.json = JSON.parse(res.body);
@@ -147,6 +147,9 @@ async function req (uriOrOption, optionUser = {}) {
   } catch (error) {
     if (error.cause && error.cause.errno === 'ETIMEDOUT' && error.cause.port === 443 && uri.match('http://')) {
       option.uri = uri.replace('http://', 'https://');
+      return req(option, optionUser);
+    } else if (error.message === 'Error: incorrect header check' && option.gzip) {
+      option.gzip = false;
       return req(option, optionUser);
     } else {
       return errorHandle(error.message);
@@ -187,10 +190,16 @@ async function reqHEAD (uriOrOption, optionUser = {}) {
         console.debug(`Redirect:\t${this.uri.href}`);
       }).on('response', async res => {
         reses.push(res);
-        if (['application', 'binary'].some(i => res.headers['content-type'] && res.headers['content-type'].match(i)) || (res.headers['content-disposition'] && res.headers['content-disposition'].match(/^attachment/))) {
+        if (['application', 'binary'].some(i => res.headers['content-type'] && res.headers['content-type'].match(i)) || (res.headers['content-disposition'] && res.headers['content-disposition'].match(/^attachment/)) || res.headers['content-length'] / 1024 / 1024 > 5) {
           req.abort();
           resolve(reses);
           return;
+        }
+
+        const encoding = res.headers['content-encoding'];
+        const zlib = require('zlib');
+        if (encoding === 'gzip' || encoding === 'deflate') {
+          res = res.pipe(encoding === 'gzip' ? zlib.createGunzip() : zlib.createInflate());
         }
 
         res.on('end', async function () {

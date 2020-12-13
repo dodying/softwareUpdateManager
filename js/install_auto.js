@@ -89,6 +89,9 @@ const install = async (vars, excludes = undefined) => {
     } else if (files.filter(i => i.name.match(/app-32\.7z$/i)).length) {
       console.log('app-32');
       return require('./install_zipped')(vars, 'install', 'app-32.7z');
+    } else if (files.filter(i => i.name.match(/app\.7z$/i)).length) {
+      console.log('app');
+      return require('./install_zipped')(vars, 'install', 'app.7z');
     } else if (files.filter(i => i.name.match(/full\.nupkg$/i)).length) {
       console.log('nupkg');
       return require('./install_zipped')(vars, 'install', 'full.nupkg', null, 'lib\\net45');

@@ -26,9 +26,10 @@ const install = async (info, js, filter = undefined, ...args) => {
   let list = require('./walk')('unzip').map(i => i.replace(/^unzip(\\|\/)/, ''));
 
   list = list.filter(i => fse.statSync(path.resolve('./unzip', i)).isFile());
-  const fromNew = filter ? list.filter(i => i.match(filter))[0] : list[0];
+  const fromNew = filter ? list.find(i => i === filter) || list.find(i => i.match(filter)) : list[0];
   if (!fromNew) {
     console.error(`Error:\tFile "${info.output}" Cant Find "${filter}"`);
+    console.debug(list);
     return false;
   }
 

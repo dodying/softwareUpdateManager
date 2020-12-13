@@ -12,7 +12,7 @@ const data = {
     return info.edition_info.default_edition.version;
   },
   changelog: () => info.edition_info.default_edition.brief,
-  download: () => info.edition_info.default_edition.down.default.p2p.split('|').slice(-1)[0],
+  download: () => info.edition_info.default_edition.down.default.p2p.split(/[|;]/).slice(-1)[0],
   install: 'install'
 };
 module.exports = data;
