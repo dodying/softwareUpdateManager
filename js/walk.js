@@ -21,6 +21,7 @@ class Option {
     Object.assign(this, {
       fullpath: true,
       nodir: false,
+      nofile: false,
       recursive: true
     }, other);
     this.ignore = getValue(this.ignore, []);
@@ -43,24 +44,19 @@ class Option {
 const walk = function (dir, option = {}) {
   option = new Option(dir, option);
 
-  // dir = path.resolve(process.cwd(), dir)
-
   let output = [];
-  const list = fs.readdirSync(dir);
+  let list = [];
+  try {
+    list = fs.readdirSync(dir);
+  } catch (error) {}
   list.forEach(function (file) {
-    if (option.ignore.some(i => file.match(i))) return;
-    if (option.match && !option.match.some(i => file.match(i))) return;
-
     const fullpath = path.join(dir, file);
+    if (option.ignore.some(i => fullpath.match(i))) return;
+    if (option.match && !option.match.some(i => fullpath.match(i))) return;
+
     const name = option.fullpath ? fullpath : path.relative(option.dir, fullpath);
-    let isDirectory;
-    try {
-      isDirectory = fs.existsSync(fullpath) && fs.statSync(fullpath).isDirectory();
-    } catch (error) { // ignore
-      return;
-    }
-    if (isDirectory) {
-      const dirname = file; // path.dirname(file)
+    if (fs.existsSync(fullpath) && fs.statSync(fullpath).isDirectory()) { // isDirectory
+      const dirname = path.basename(file);
       if (option.ignoreDir.some(i => dirname.match(i))) return;
       if (option.matchDir && !option.matchDir.some(i => dirname.match(i))) return;
 
@@ -72,7 +68,7 @@ const walk = function (dir, option = {}) {
       if (option.matchFile && !option.matchFile.some(i => basename.match(i))) return;
 
       if (option.match && !option.match.some(i => file.match(i))) return;
-      output.push(name);
+      if (!option.nofile) output.push(name);
     }
   });
   return output;

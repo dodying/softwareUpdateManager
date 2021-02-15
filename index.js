@@ -1,17 +1,20 @@
 // ==Headers==
-// @Name:               softwareUpdateManager
-// @Description:        软件更新管理器
-// @Version:            1.1.2190
+// @Name:               软件更新管理器
+// @Name-en:            softwareUpdateManager
+// @Description:        下载并安装可更新的软件
+// @Description-en:     download and install softwares when updates available
+// @Version:            1.2.0
 // @Author:             dodying
-// @Modified:           2020/12/11 10:07:15
+// @Created:            2021-02-15 09:58:50
+// @Modified:           2021/2/15 17:59:50
 // @Namespace:          https://github.com/dodying/Nodejs
 // @SupportURL:         https://github.com/dodying/Nodejs/issues
-// @Require:            cheerio,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
+// @Require:            cheerio,commander,deepmerge,fs-extra,html-to-text,iconv-lite,node-notifier,readline-sync,request,request-promise,socks5-http-client,socks5-https-client
 // ==/Headers==
 /* eslint-disable no-control-regex */
 
 // 设置
-var _ = require('./config');
+let _ = require('./config');
 
 // 导入原生模块
 const path = require('path');
@@ -20,6 +23,8 @@ const readline = require('readline');
 const util = require('util');
 
 // 导入第三方模块
+const commander = require('commander');
+const program = new commander.Command();
 const fse = require('fs-extra');
 const cheerio = require('cheerio');
 const readlineSync = require('readline-sync');
@@ -136,8 +141,6 @@ for (const i in readlineSync) {
 }
 for (const i in _.defaultOptions) util.inspect.defaultOptions[i] = _.defaultOptions[i];
 
-// 全局函数
-// 处理config
 _.archivePath = path.resolve(__dirname, _.archivePath);
 _.download.urlWithoutHeader = [].concat(_.download.urlWithoutHeader, 'sourceforge.net', 'osdn.net', 'mediafire.com');
 
@@ -146,413 +149,9 @@ const exts2 = ['.gz', '.bz2', '.xz'];
 
 const releasePage = 'https://github.com/dodying/softwareUpdateManager/releases/tag/plugins';
 
-var args = process.argv.splice(2);
-var argAlias = {
-  '-p': '--profile',
-  '-q': '--quiet',
+const software = {};
 
-  '-h': '--help',
-  '-md': '--makemd',
-  '-l': '--list',
-  '-u': '--update',
-  '-s': '--search',
-
-  '-c': '--check',
-  '-b': '--backup',
-  '-i': '--install',
-  '-t': '--test',
-  '-td': '--test-download',
-  '-ti': '--test-install',
-
-  '-f': '--filter'
-};
-args = args.map(i => argAlias[i] || i);
-
-var mode = 'default';
-if (args.length) {
-  if (args.includes('--test')) {
-    mode = 'test';
-    args.splice(args.indexOf('--test'), 1);
-  } else if (args.includes('--test-download')) {
-    mode = 'test-download';
-    args.splice(args.indexOf('--test-download'), 1, '--profile', 'test');
-  } else if (args.includes('--test-install')) {
-    mode = 'test-install';
-    args.splice(args.indexOf('--test-install'), 1, '--profile', 'test');
-  }
-}
-
-var database; var databaseFile = './database.json';
-if (args.length && args.includes('--profile')) {
-  const index = args.indexOf('--profile');
-  const profile = args[index + 1];
-  args.splice(index, 2);
-  databaseFile = `./database-${profile}.json`;
-  if (!(profile in _.profile) || Object.keys(_.profile[profile]).length === 0) {
-    console.error(`Error:\tNo Profile "${profile}"`);
-    process.exit();
-  }
-  _ = _.profile[profile].deepmerge ? merge(_, _.profile[profile]) : Object.assign(_, _.profile[profile]);
-  delete _.profile;
-}
-try {
-  database = fse.existsSync(databaseFile) ? JSON.parse(fse.readFileSync(databaseFile, 'utf-8')) : {};
-} catch (error) {
-  database = {};
-}
-
-var softwareFilter;
-if (args.length) {
-  if (args.includes('--help')) {
-    const notice = [
-      'Usage: node index.js [general] [basic | mode filter]',
-      '',
-      'General Option:',
-      ' -p [name], --profile [name]       use specific profile',
-      ' -q, --quiet                       passive mode',
-      '',
-      'Basic Option:',
-      ' -h, --help                        Print help',
-      ' -md, --makemd                     Make README',
-      ' -l, --list                        sort and list softwares',
-      ' -u, --update                      update',
-      ' -s [keyword], --search [keyword]  search software',
-      '',
-      'Mode Option:',
-      ' -c, --check                       check and write into database',
-      ' -b, --backup                      backup all softwares',
-      ' -i, --install                     install all softwares',
-      ' -t, --test                        test all softwares',
-      ' -td, --test-download              test all softwares (download, use profile test)',
-      ' -ti, --test-install               test all softwares (download and install, use profile test)',
-      '',
-      'Filter Option:',
-      ' -f [name], --filter [name]        filter with RegExp, multi-words separator: , (comma)',
-      ' [name]                            filter when only equal',
-      '',
-      'More Information: https://github.com/dodying/softwareUpdateManager'
-    ];
-    console.warn(notice.join('\n'));
-    process.exit();
-  } else if (args.includes('--list')) {
-    const databaseNew = {};
-    let sortable = [];
-    Object.keys(database).forEach(i => {
-      sortable.push([i, database[i]]);
-    });
-    sortable = sortable.sort((a, b) => {
-      if ('lastupdatetime' in a[1] && 'lastupdatetime' in b[1]) {
-        return new Date(b[1].lastupdatetime).getTime() - new Date(a[1].lastupdatetime).getTime();
-      } else if ('lastupdatetime' in a[1]) {
-        return -1;
-      } else if ('lastupdatetime' in b[1]) {
-        return 1;
-      } else {
-        return new Date(b[1].lasttime).getTime() - new Date(a[1].lasttime).getTime();
-      }
-    });
-    sortable.forEach(i => {
-      databaseNew[i[0]] = i[1];
-    });
-    console.log(Object.keys(databaseNew).map(i => `${i}: ${databaseNew[i].version}`).join('\n'));
-    fse.writeFileSync(databaseFile, JSON.stringify(databaseNew, null, 2));
-    process.exit();
-  } else if (args.includes('--makemd')) {
-    (async () => {
-      let database;
-      try {
-        database = fse.existsSync('./software.json') ? fse.readJSONSync('./software.json') : {};
-      } catch (error) {
-        database = {};
-      }
-
-      let md = fse.readFileSync('README_RAW.md', 'utf-8');
-      let mdEn = fse.readFileSync('README_en_RAW.md', 'utf-8');
-      const search = fse.readdirSync('./js/search').map((item, order) => `${order + 1}. ${path.parse(item).name}`).join('\n');
-
-      // let filePre = 'https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software'
-      const filePre = 'software';
-
-      const software = [];
-      const softwareTagged = {};
-
-      let orderForWithoutDownload = 0;
-      let softwareWithoutDownload = '';
-
-      let orderForWithoutInstaller = 0;
-      let softwareWithoutInstaller = '';
-
-      let orderForSpecialInstaller = 0;
-      let softwareSpecialInstaller = '';
-
-      // let list = fse.readdirSync('software')
-      const list = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/'));
-      const descriptionUrl = ['github.com', 'api.github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com', 'www.nirsoft.net', 'www.sordum.org', 'docs.microsoft.com', 'www.the-sz.com', 'www.glarysoft.com', 'www.abelssoft.de', 'www.jam-software.com', 'www.sterjosoft.com', 'www.wisecleaner.com', 'vovsoft.com', 'www.fosshub.com', 'chocolatey.org'];
-      for (let i = 0; i < list.length; i++) {
-        if (fse.statSync(path.resolve('software', list[i])).isFile()) {
-          const info = require(path.resolve('software', list[i]));
-          const name = list[i].replace(/\.js$/, '');
-          const src = encodeURI(list[i]);
-          let uri = info.url || Object.values(info.site)[0];
-          const host = new URL(uri).host;
-
-          let softwareThis = '';
-          // softwareThis += `${i + 1}. `;
-          softwareThis += '[';
-          // softwareThis += `<img src="https://besticon-demo.herokuapp.com/icon?size=16..32..40&url=${host}" width="16"> `
-          softwareThis += `${name}](${uri})`;
-
-          if (info.commercial === true || info.commercial === 3) softwareThis += ' :money_with_wings:';
-          if (info.commercial === 2) softwareThis += ' [Free Personal]';
-          if (info.commercial === 1) softwareThis += ' [Freemium]';
-          if (info.useProxy) softwareThis += ' :airplane:';
-          if (!info.install) softwareThis += ' :hand:';
-          if (info.fixedPath) softwareThis += ' :pushpin:';
-          if (info.tags) softwareThis += ` <tags: ${[].concat(info.tags).map(i => `[${i}](#${i})`).join(', ')}>`;
-
-          if (!(name in database) && descriptionUrl.includes(host)) {
-            console.log(`Index-${i + 1}:\t${name}`);
-            if (uri.match(/api\.github\.com\/repos\/(.*)\/releases/)) {
-              const matched = uri.match(/api\.github\.com\/repos\/(.*)\/releases/)[1];
-              uri = `https://github.com/${matched}/releases/latest`;
-            }
-            // TODO RECORD GITHUB
-            if (uri.match(/\/github.com\/(.*?)\/releases/)) {
-              fse.appendFileSync('github.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
-            }
-            // TODO RECORD GITHUB
-
-            let res = await req(uri, { useProxy: info.useProxy });
-            if (res instanceof Error || !res || res.statusCode >= 300 || res.statusCode < 200) res = await req(uri, { useProxy: !info.useProxy });
-            if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
-              // TODO RECORD GITHUB
-              if (uri.match(/\/github.com\/(.*?)\/releases/)) {
-                const repo = uri.match(/\/github.com\/(.*?)\/releases/)[0];
-                const repoNew = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[0];
-                if (repo !== repoNew) fse.appendFileSync('github-change.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
-              }
-              // TODO RECORD GITHUB
-              const $ = cheerio.load(res.body);
-              let description = $('[itemprop="description"]').text() || $('[name="description"]').attr('content') || $('[property="og:description"]').attr('content') || $('[name="twitter:description"]').attr('content') || '';
-              if (uri.match(/\/github.com\/(.*?)\/releases/)) {
-                const repo = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[1];
-                const watch = $('.social-count[aria-label$="watching this repository"]').eq(0).text().trim();
-                const star = $('.social-count[aria-label$="starred this repository"]').eq(0).text().trim();
-                const fork = $('.social-count[aria-label$="forked this repository"]').eq(0).text().trim();
-                description = `[${watch}/${star}/${fork}] ` + description.replace(/\s+Contribute to .*? on GitHub\.$/, '').replace(repo, '').replace(/ - $/, '');
-              } else if (uri.match(/majorgeeks.com\/mg\/getmirror/)) {
-                description = $('.geekyinsidecontent').eq(0).text();
-              } else if (uri.match(/nirsoft.net/)) {
-                const matched = res.body.replace(/[\r\n]+/g, ' ').match(/<h4 class="utilsubject">Description<\/h4>(.*?)<.*?>/);
-                description = matched ? matched[1] : '';
-              } else if (uri.match(/abelssoft.de/)) {
-                description = description.replace(/(✓|✔).*/, '');
-              } else if (uri.match(/chocolatey.org/)) {
-                description = $('#description').eq(0).text();
-              }
-              if (description) {
-                description = description.trim().replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
-                const maxLength = 200;
-                if (description.length > maxLength) {
-                  description = description.split('').reverse().join('');
-                  while (description.match(/^.*?[A-Z]\s([.?!])|^..*?([。？！])/) && description.length > maxLength) {
-                    description = description.replace(/^.*?[A-Z]\s([.?!])|^..*?([。？！])/, '$1$2');
-                  }
-                  description = description.split('').reverse().join('');
-                  if (description.length > maxLength) description = description.substr(0, maxLength);
-                }
-                database[name] = description;
-              }
-            } else {
-              console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
-            }
-            fse.writeJSONSync('./software.json', database, { spaces: 2 });
-          }
-          if (name in database) softwareThis += ' ' + database[name];
-
-          if (!info.download && !info.site) {
-            softwareWithoutDownload += `${orderForWithoutDownload + 1}. `;
-            softwareWithoutDownload += `[${name}](${filePre}/${src})`;
-            softwareWithoutDownload += '\n';
-            orderForWithoutDownload++;
-          } else if (!info.install) {
-            softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `;
-            softwareWithoutInstaller += `[${name}](${filePre}/${src})`;
-            if (info.installType) softwareWithoutInstaller += ` ${info.installType}`;
-            softwareWithoutInstaller += '\n';
-            orderForWithoutInstaller++;
-          } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
-            softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `;
-            softwareSpecialInstaller += `[${name}](${filePre}/${src})`;
-            softwareSpecialInstaller += '\n';
-            orderForSpecialInstaller++;
-          }
-
-          if (info.tags) {
-            for (const i of [].concat(info.tags)) {
-              if (!(i in softwareTagged)) softwareTagged[i] = [];
-              softwareTagged[i].push(softwareThis);
-            }
-          } else {
-            software.push(softwareThis);
-          }
-        }
-      }
-
-      md = md.replace(/{search}/, search);
-      md = md.replace(/{software-without-download}/g, softwareWithoutDownload);
-      md = md.replace(/{software-without-installer}/g, softwareWithoutInstaller);
-      md = md.replace(/{software-special-installer}/g, softwareSpecialInstaller);
-      fse.writeFileSync('README.md', md);
-
-      mdEn = mdEn.replace(/{search}/, search);
-      mdEn = mdEn.replace(/{software-without-download}/g, softwareWithoutDownload);
-      mdEn = mdEn.replace(/{software-without-installer}/g, softwareWithoutInstaller);
-      mdEn = mdEn.replace(/{software-special-installer}/g, softwareSpecialInstaller);
-      fse.writeFileSync('README_en.md', mdEn);
-
-      const mdSoftware = [
-        '<details>',
-        '<summary>TOC</summary>',
-        '',
-        Object.keys(softwareTagged).concat('UnTagged').map(i => `- [${i}](#${i})`).join('\n'),
-        '</details>',
-        '',
-        '---',
-        '',
-        Object.keys(softwareTagged).map(i => `### ${i}\n<details>\n\n${softwareTagged[i].map((j, index) => `${index + 1}. ${j}`).join('\n')}\n</details>`).join('\n\n'),
-        '\n',
-        '### UnTagged',
-        '<details>',
-        '',
-        software.map((i, index) => `${index + 1}. ${i}`).join('\n'),
-        '</details>'
-      ].join('\n');
-      fse.writeFileSync('SupportedSoftwares.md', mdSoftware);
-      process.exit();
-    })();
-  } else if (args.includes('--search')) {
-    mode = 'search';
-  }
-
-  if (args.includes('--quiet')) {
-    args.splice(args.indexOf('--quiet'), 1);
-    readlineSync.keyInPause = query => console.warn(`${query} ${color.Reset}(Hit any key)`);
-    readlineSync.keyInSelect = (list, query) => {
-      console.log();
-      list.forEach((i, j) => console.warn(`[${j + 1}] ${i}`));
-      console.warn('[0] CANCEL');
-      console.log();
-      console.warn(`${query} [${list.map((i, j) => j + 1).join(', ')}, 0]: ${color.Reset}1`);
-      return 0;
-    };
-    readlineSync.keyInYN = query => console.warn(`${query} ${color.Reset}[y/n]: n`) || false;
-    readlineSync.keyInYNStrict = query => console.warn(`${query} ${color.Reset}[y/n]: n`) || false;
-  }
-
-  if (args.includes('--filter')) {
-    if (mode === 'default') mode = 'filter';
-    const index = args.indexOf('--filter');
-    const re = args[index + 1] ? new RegExp((args[index + 1]).replace(/,/g, '|'), 'gi') : '';
-    args.splice(index, 2);
-    softwareFilter = software => software.match(re);
-  }
-
-  if (!['default', 'filter'].includes(mode)) {
-    // go-on
-  } else if (args.includes('--check')) {
-    mode = 'check';
-    args.splice(args.indexOf('--check'), 1);
-  } else if (args.includes('--backup')) {
-    mode = 'backup';
-    args.splice(args.indexOf('--backup'), 1);
-  } else if (args.includes('--install')) {
-    mode = 'install';
-    args.splice(args.indexOf('--install'), 1);
-  }
-}
-
-if (!softwareFilter) {
-  if (args.length === 0) {
-    softwareFilter = () => true;
-  } else {
-    softwareFilter = i => args.includes(i);
-  }
-}
-
-var softwareList;
-if (['test', 'test-download', 'test-install'].includes(mode)) {
-  const softwareAll = walk('software', { nodir: true, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, ''));
-  softwareAll.forEach(i => {
-    let info;
-    try {
-      info = require(`./software/${i}.js`);
-      if (info.other) softwareAll.push(...Object.keys(info.other).map(j => `${i}:${j}`));
-    } catch (error) {
-      console.error(error);
-    }
-  });
-  softwareList = softwareAll.sort((a, b) => a.toUpperCase() > b.toUpperCase() ? 1 : a.toUpperCase() < b.toUpperCase() ? -1 : 0);
-} else {
-  softwareList = Object.keys(_.software);
-}
-
-var software = {};
-softwareList.forEach(i => {
-  const match = i.match(/^(.*):(.*)$/);
-  const [, raw, version] = match || [null, i];
-
-  if (softwareFilter(i)) {
-    if (fse.existsSync(`./software/${raw}.js`)) {
-      software[i] = Object.assign({}, require(`./software/${raw}.js`));
-      software[i].raw = JSON.parse(JSON.stringify(software[i]));
-
-      if (version) {
-        if (software[i].other[version]) {
-          if (!software[i].other[version].url && software[i].other[version].site) software[i].other[version].url = null;
-          software[i] = Object.assign(software[i], software[i].other[version]);
-        } else {
-          console.error(`Error:\tNo Version named "${i}:${version}"`);
-          delete software[i];
-        }
-      }
-    } else {
-      // TODO: get from remote
-      console.error(`Error:\tNot Exists "${i}"`);
-    }
-  }
-});
-
-if (args.length > 1 && Object.keys(software).length === 0) {
-  const i = args.join(' ');
-  const match = i.match(/^(.*):(.*)$/);
-  const [, raw, version] = match || [null, i];
-
-  if (softwareList.includes(raw) && fse.existsSync(`./software/${raw}.js`)) {
-    software[i] = Object.assign({}, require(`./software/${raw}.js`));
-
-    if (version) {
-      if (software[i].other[version]) {
-        if (!software[i].other[version].url && software[i].other[version].site) software[i].other[version].url = null;
-        software[i] = Object.assign(software[i], software[i].other[version]);
-      } else {
-        console.error(`Error:\tNo Version named "${i}:${version}"`);
-        delete software[i];
-      }
-    }
-  }
-}
-
-var fns = {
-  cheerio,
-  getNow,
-  spawnSync,
-  req,
-  reqRaw,
-  reqHEAD,
-  getHash,
-  dirname: __dirname
-};
+const fns = { cheerio, getNow, spawnSync, req, reqRaw, reqHEAD, getHash, dirname: __dirname };
 walk('js', { nodir: true, matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice(1).join('/').replace(/\.js$/, '')).forEach(i => {
   const arr = i.split(/[/_]/);
   let obj = fns;
@@ -562,6 +161,10 @@ walk('js', { nodir: true, matchFile: /\.js$/ }).map(i => i.split(/[\\/]/).splice
   }
   obj[arr[arr.length - 1]] = require(`./js/${i}.js`);
 });
+let databaseFile = `${__dirname}/database.json`;
+let database = fse.existsSync(databaseFile) ? JSON.parse(fse.readFileSync(databaseFile, 'utf-8')) : {};
+
+let mode;
 
 // Function
 function getNow () { return new Date().toLocaleString(_.locale, { hour12: false }); }
@@ -1505,9 +1108,7 @@ function doBeforeExit () {
 }
 
 // Main
-async function init () {
-  if (['--makemd'].some(i => args.includes(i))) return;
-
+const main = async () => {
   if (!fse.existsSync('./plugins')) {
     console.error('Error:\tNo Plugins, Please Download And Extract to "plugins"');
     if (readlineSync.keyInYNStrict(`Open ${releasePage}`)) cp.execSync(`start "" "${releasePage}"`);
@@ -1525,9 +1126,272 @@ async function init () {
     }
   }
 
-  if (mode === 'search') { // Search
+  const softwareAll = Object.fromEntries(walk(`${__dirname}/software`, { nodir: true, fullpath: false, ignoreDir: 'Invalid', matchFile: /\.js$/ }).map(file => {
+    let info;
+    try {
+      info = require(`${__dirname}/software/${file}`);
+      const pathArr = file.replace(/\.js$/, '').split(/[\\/]+/);
+      let entries, directory;
+      if (info.type === 'software-list') {
+        entries = Object.entries(info.list);
+        directory = info.noDirectory ? '' : (info.directory || pathArr.join('/'));
+      } else {
+        entries = [[pathArr.slice(-1)[0], info]];
+        directory = pathArr.slice(0, -1).join('/');
+      }
+      directory = [].concat(directory);
+
+      const length = entries.length;
+      const entriesNew = [];
+      for (let i = 0; i < length; i++) {
+        const [key, value] = entries[i];
+        value.file = file;
+        const aliases = [].concat(value.alias, key).filter(i => i); delete value.alias;
+        entriesNew.push(...directory.map(dir => aliases.map(alias => [`${dir ? `${dir}/` : ''}${alias}`, value])).flat());
+        if (value.other) {
+          entriesNew.push(...directory.map(dir =>
+            aliases.map(alias =>
+              Object.keys(value.other).map(key => {
+                const aliases1 = [].concat(value.other[key].alias, key).filter(i => i);
+                if (!value.other[key].url && value.other[key].site) value.other[key].url = null;
+                return aliases1.map(alias1 => [`${dir ? `${dir}/` : ''}${alias}:${alias1}`, Object.assign({}, value, value.other[key])]);
+              })
+            )
+          ).flat(3));
+
+          Object.values(value.other).map(i => delete i.alias);
+          delete value.other;
+        }
+      }
+
+      return entriesNew;
+    } catch (error) {
+      console.error(error);
+    }
+  }).filter(i => i && i instanceof Array).flat().filter(i => i.length));
+
+  const __content = fse.readFileSync(__filename, 'utf-8');
+  program.version(__content.match(/^\/\/\s*@Version:\s*(\S+)$/im)[1]).description(__content.match(/^\/\/\s*@Description:\s*(\S+)$/im)[1]);
+  program.option('-p, --profile <profile>', 'use specific profile defined in config.profile', (profile) => {
+    if (!(profile in _.profile) || Object.keys(_.profile[profile]).length === 0) {
+      console.error(`Error:\tNo Profile "${profile}"`);
+      process.exit();
+    }
+    databaseFile = `${__dirname}/database-${profile}.json`;
+    database = fse.existsSync(databaseFile) ? JSON.parse(fse.readFileSync(databaseFile, 'utf-8')) : {};
+    _ = _.profile[profile].deepmerge ? merge(_, _.profile[profile]) : Object.assign(_, _.profile[profile]);
+    delete _.profile;
+  });
+  program.option('-q, --quiet', 'passive mode', () => {
+    readlineSync.keyInPause = query => console.warn(`${query} ${color.Reset}(Hit any key)`);
+    readlineSync.keyInSelect = (list, query) => {
+      console.log();
+      list.forEach((i, j) => console.warn(`[${j + 1}] ${i}`));
+      console.warn('[0] CANCEL');
+      console.log();
+      console.warn(`${query} [${list.map((i, j) => j + 1).join(', ')}, 0]: ${color.Reset}1`);
+      return 0;
+    };
+    readlineSync.keyInYN = query => console.warn(`${query} ${color.Reset}[y/n]: n`) || false;
+    readlineSync.keyInYNStrict = query => console.warn(`${query} ${color.Reset}[y/n]: n`) || false;
+  });
+
+  program.command('makemd').description('make README').action(async () => {
+    let database;
+    try {
+      database = fse.existsSync('./software.json') ? fse.readJSONSync('./software.json') : {};
+    } catch (error) {
+      database = {};
+    }
+
+    let md = fse.readFileSync('README_RAW.md', 'utf-8');
+    let mdEn = fse.readFileSync('README_en_RAW.md', 'utf-8');
+    const search = fse.readdirSync('./js/search').map((item, order) => `${order + 1}. ${path.parse(item).name}`).join('\n');
+
+    // let filePre = 'https://github.com/dodying/software-for-softwareUpdateManager/blob/master/software'
+    const filePre = 'software';
+
+    const software = [];
+    const softwareTagged = {};
+
+    let orderForWithoutDownload = 0;
+    let softwareWithoutDownload = '';
+
+    let orderForWithoutInstaller = 0;
+    let softwareWithoutInstaller = '';
+
+    let orderForSpecialInstaller = 0;
+    let softwareSpecialInstaller = '';
+
+    // let list = fse.readdirSync('software')
+    const descriptionUrl = ['github.com', 'api.github.com', 'sourceforge.net', 'www.majorgeeks.com', 'www.softpedia.com', 'www.nirsoft.net', 'www.sordum.org', 'docs.microsoft.com', 'www.the-sz.com', 'www.glarysoft.com', 'www.abelssoft.de', 'www.jam-software.com', 'www.sterjosoft.com', 'www.wisecleaner.com', 'vovsoft.com', 'www.fosshub.com', 'chocolatey.org'];
+    const softwareEntries = Object.entries(softwareAll);
+    for (let i = 0; i < softwareEntries.length; i++) {
+      const [name, info] = softwareEntries[i];
+      if (name.includes(':')) continue;
+
+      const src = info.file.split(/[\\/]+/).map(i => encodeURIComponent(i)).join('/');
+      let uri = info.url || Object.values(info.site)[0];
+      const host = new URL(uri).host;
+
+      let softwareThis = '';
+      // softwareThis += `${i + 1}. `;
+      softwareThis += '[';
+      // softwareThis += `<img src="https://besticon-demo.herokuapp.com/icon?size=16..32..40&url=${host}" width="16"> `
+      softwareThis += `${name}](${uri})`;
+
+      if (info.commercial === true || info.commercial === 3) softwareThis += ' :money_with_wings:';
+      if (info.commercial === 2) softwareThis += ' [Free Personal]';
+      if (info.commercial === 1) softwareThis += ' [Freemium]';
+      if (info.useProxy) softwareThis += ' :airplane:';
+      if (!info.install) softwareThis += ' :hand:';
+      if (info.fixedPath) softwareThis += ' :pushpin:';
+      if (info.tags) softwareThis += ` <tags: ${[].concat(info.tags).map(i => `[${i}](#${i})`).join(', ')}>`;
+
+      if (!(name in database) && descriptionUrl.includes(host)) {
+        console.log(`Index-${i + 1}:\t${name}`);
+        if (uri.match(/api\.github\.com\/repos\/(.*)\/releases/)) {
+          const matched = uri.match(/api\.github\.com\/repos\/(.*)\/releases/)[1];
+          uri = `https://github.com/${matched}/releases/latest`;
+        }
+        // TODO RECORD GITHUB
+        if (uri.match(/\/github.com\/(.*?)\/releases/)) {
+          fse.appendFileSync('github.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
+        }
+        // TODO RECORD GITHUB
+
+        let res = await req(uri, { useProxy: info.useProxy });
+        if (res instanceof Error || !res || res.statusCode >= 300 || res.statusCode < 200) res = await req(uri, { useProxy: !info.useProxy });
+        if (res && (res.statusMessage === 'OK' || (res.statusCode >= 200 && res.statusCode < 300))) {
+          // TODO RECORD GITHUB
+          if (uri.match(/\/github.com\/(.*?)\/releases/)) {
+            const repo = uri.match(/\/github.com\/(.*?)\/releases/)[0];
+            const repoNew = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[0];
+            if (repo !== repoNew) fse.appendFileSync('github-change.txt', uri.match(/\/github.com\/(.*?)\/releases/)[1] + '\n');
+          }
+          // TODO RECORD GITHUB
+          const $ = cheerio.load(res.body);
+          let description = $('[itemprop="description"]').text() || $('[name="description"]').attr('content') || $('[property="og:description"]').attr('content') || $('[name="twitter:description"]').attr('content') || '';
+          if (uri.match(/\/github.com\/(.*?)\/releases/)) {
+            const repo = res.request.uri.href.match(/\/github.com\/(.*?)\/releases/)[1];
+            const watch = $('.social-count[aria-label$="watching this repository"]').eq(0).text().trim();
+            const star = $('.social-count[aria-label$="starred this repository"]').eq(0).text().trim();
+            const fork = $('.social-count[aria-label$="forked this repository"]').eq(0).text().trim();
+            description = `[${watch}/${star}/${fork}] ` + description.replace(/\s+Contribute to .*? on GitHub\.$/, '').replace(repo, '').replace(/ - $/, '');
+          } else if (uri.match(/majorgeeks.com\/mg\/getmirror/)) {
+            description = $('.geekyinsidecontent').eq(0).text();
+          } else if (uri.match(/nirsoft.net/)) {
+            const matched = res.body.replace(/[\r\n]+/g, ' ').match(/<h4 class="utilsubject">Description<\/h4>(.*?)<.*?>/);
+            description = matched ? matched[1] : '';
+          } else if (uri.match(/abelssoft.de/)) {
+            description = description.replace(/(✓|✔).*/, '');
+          } else if (uri.match(/chocolatey.org/)) {
+            description = $('#description').eq(0).text();
+          }
+          if (description) {
+            description = description.trim().replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+            const maxLength = 200;
+            if (description.length > maxLength) {
+              description = description.split('').reverse().join('');
+              while (description.match(/^.*?[A-Z]\s([.?!])|^..*?([。？！])/) && description.length > maxLength) {
+                description = description.replace(/^.*?[A-Z]\s([.?!])|^..*?([。？！])/, '$1$2');
+              }
+              description = description.split('').reverse().join('');
+              if (description.length > maxLength) description = description.substr(0, maxLength);
+            }
+            database[name] = description;
+          }
+        } else {
+          console.error(`Error:\t${res.statusCode} ${res.statusMessage}`);
+        }
+        fse.writeJSONSync('./software.json', database, { spaces: 2 });
+      }
+      if (name in database) softwareThis += ' ' + database[name];
+
+      if (!info.download && !info.site) {
+        softwareWithoutDownload += `${orderForWithoutDownload + 1}. `;
+        softwareWithoutDownload += `[${name}](${filePre}/${src})`;
+        softwareWithoutDownload += '\n';
+        orderForWithoutDownload++;
+      } else if (!info.install) {
+        softwareWithoutInstaller += `${orderForWithoutInstaller + 1}. `;
+        softwareWithoutInstaller += `[${name}](${filePre}/${src})`;
+        if (info.installType) softwareWithoutInstaller += ` ${info.installType}`;
+        softwareWithoutInstaller += '\n';
+        orderForWithoutInstaller++;
+      } else if ((info.install && info.install.toString().split(/[\r\n]+/).length > 3) || info.beforeInstall || info.afterInstall) {
+        softwareSpecialInstaller += `${orderForSpecialInstaller + 1}. `;
+        softwareSpecialInstaller += `[${name}](${filePre}/${src})`;
+        softwareSpecialInstaller += '\n';
+        orderForSpecialInstaller++;
+      }
+
+      if (info.tags) {
+        for (const i of [].concat(info.tags)) {
+          if (!(i in softwareTagged)) softwareTagged[i] = [];
+          softwareTagged[i].push(softwareThis);
+        }
+      } else {
+        software.push(softwareThis);
+      }
+    }
+
+    md = md.replace(/{search}/, search);
+    md = md.replace(/{software-without-download}/g, softwareWithoutDownload);
+    md = md.replace(/{software-without-installer}/g, softwareWithoutInstaller);
+    md = md.replace(/{software-special-installer}/g, softwareSpecialInstaller);
+    fse.writeFileSync('README.md', md);
+
+    mdEn = mdEn.replace(/{search}/, search);
+    mdEn = mdEn.replace(/{software-without-download}/g, softwareWithoutDownload);
+    mdEn = mdEn.replace(/{software-without-installer}/g, softwareWithoutInstaller);
+    mdEn = mdEn.replace(/{software-special-installer}/g, softwareSpecialInstaller);
+    fse.writeFileSync('README_en.md', mdEn);
+
+    const mdSoftware = [
+      '<details>',
+      '<summary>TOC</summary>',
+      '',
+      Object.keys(softwareTagged).concat('UnTagged').map(i => `- [${i}](#${i})`).join('\n'),
+      '</details>',
+      '',
+      '---',
+      '',
+      Object.keys(softwareTagged).map(i => `### ${i}\n<details>\n\n${softwareTagged[i].map((j, index) => `${index + 1}. ${j}`).join('\n')}\n</details>`).join('\n\n'),
+      '\n',
+      '### UnTagged',
+      '<details>',
+      '',
+      software.map((i, index) => `${index + 1}. ${i}`).join('\n'),
+      '</details>'
+    ].join('\n');
+    fse.writeFileSync('SupportedSoftwares.md', mdSoftware);
+  });
+  program.command('list').description('sort and list softwares').action(async () => {
+    const databaseNew = {};
+    let sortable = [];
+    Object.keys(database).forEach(i => {
+      sortable.push([i, database[i]]);
+    });
+    sortable = sortable.sort((a, b) => {
+      if ('lastupdatetime' in a[1] && 'lastupdatetime' in b[1]) {
+        return new Date(b[1].lastupdatetime).getTime() - new Date(a[1].lastupdatetime).getTime();
+      } else if ('lastupdatetime' in a[1]) {
+        return -1;
+      } else if ('lastupdatetime' in b[1]) {
+        return 1;
+      } else {
+        return new Date(b[1].lasttime).getTime() - new Date(a[1].lasttime).getTime();
+      }
+    });
+    sortable.forEach(i => {
+      databaseNew[i[0]] = i[1];
+    });
+    console.log(Object.keys(databaseNew).map(i => `${i}: ${databaseNew[i].version}`).join('\n'));
+    fse.writeFileSync(databaseFile, JSON.stringify(databaseNew, null, 2));
+  });
+  program.command('search <keyword>').description('search software').action(async (keyword) => {
     let result = [];
-    const keyword = args[args.indexOf('--search') + 1];
 
     let list = [].concat(_.search).filter(i => fse.existsSync(path.join('./js/search', i + '.js')));
     if (!list.length) list = fse.readdirSync('./js/search');
@@ -1562,287 +1426,301 @@ async function init () {
         console.log(`Notice:\tFile Generated "${filepath}", move it to "software" manually`);
       }
     }
-  }
+  });
+  program.command('run [softwares...]', { isDefault: true })
+    .addOption(new commander.Option('-m, --mode [mode]', 'mode').default('default').choices(['default', 'check', 'backup', 'install', 'test', 'test-download', 'test-install']))
+    .option('-f, --filter [keyword]', 'filter with RegExp')
+    .action(async (softwares, cmdObj) => {
+      mode = cmdObj.mode;
+      if (mode === 'default' && (softwares.length || cmdObj.filter)) mode = 'filter';
 
-  if (!fse.existsSync(_.archivePath)) fse.mkdirsSync(_.archivePath);
-  if (['default', 'filter'].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) return;
+      // 过滤软件
+      const softwareAllList = ['test', 'test-download', 'test-install'].includes(mode) ? Object.keys(softwareAll) : Object.keys(_.software);
+      let softwareList = [];
+      if (softwares.length) softwareList.push(...softwares.filter(i => softwareAllList.includes(i)));
+      if (cmdObj.filter) softwareList.push(...softwareAllList.filter(i => i.match(new RegExp(cmdObj.filter, 'i'))));
+      if (!(softwares.length || cmdObj.filter) && softwareList.length === 0) softwareList = softwareAllList;
+      for (const i of softwareList) software[i] = softwareAll[i];
 
-  for (const i in software) {
-    doBeforeExit();
+      if (!fse.existsSync(_.archivePath)) fse.mkdirsSync(_.archivePath);
+      if (['default', 'filter'].includes(mode) && (_.mode === 3 || _.commercialMode === 3 || Object.values(_.specialMode).some(i => i === 3)) && !_.ignoreWarn.mode3 && !readlineSync.keyInYNStrict('There are some configuration or profile of softwares may be removed if there are new version.\nMake sure you know mode 3 at your own risk.\nDo you want to continue?')) return;
 
-    fns.info = software[i];
+      for (const i in software) {
+        doBeforeExit();
 
-    const iEscaped = i.replace(/[:*?"<>|]/g, '-');
-    const iRaw = i.match(/(.*):(.*)$/) ? i.match(/(.*):(.*)$/)[1] : i;
+        fns.info = software[i];
 
-    if (software[i].url && software[i].version) {
-      // go-on
-    } else if (software[i].site && Object.keys(software[i].site).length) {
-      // go-on
-    } else {
-      console.error(`Error:\tNo Enough Info "${path.join(__dirname, 'software', iRaw + '.js')}"`);
-      continue;
-    }
+        const iEscaped = i.replace(/[:*?"<>|]/g, '-');
 
-    if (software[i].commercial === 1) software[i].commercial = _.freePersion;
-    if (software[i].commercial === 2) software[i].commercial = _.freemium;
-
-    if (['test', 'test-download', 'test-install', 'check'].includes(mode)) {
-      // go-on
-    } else if (_.specialMode[i] === -1) {
-      continue;
-    } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode === -1)) {
-      continue;
-    } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode === -1)) {
-      continue;
-    }
-
-    // 扩展为标准格式
-    software[i] = ExtendSoftware(software[i]);
-
-    if (software[i].fixedPath instanceof Array) {
-      const pathes = software[i].fixedPath;
-      let folder = getPath(pathes[0]);
-      for (let o = 1; o < pathes.length; o++) {
-        if (!fse.existsSync(folder) || !fse.statSync(folder).isDirectory()) break;
-
-        if (typeof pathes[o] === 'string') {
-          folder = path.resolve(folder, pathes[o]);
+        if (software[i].url && software[i].version) {
+          // go-on
+        } else if (software[i].site && Object.keys(software[i].site).length) {
+          // go-on
+        } else {
+          console.error(`Error:\tNo Enough Info "${path.join(__dirname, 'software', software[i].file)}"`);
           continue;
         }
 
-        let files = fse.readdirSync(folder);
-        if (pathes[o] instanceof RegExp) {
-          files = files.filter(i => i.match(pathes[o]));
+        if (software[i].commercial === 1) software[i].commercial = _.freePersion;
+        if (software[i].commercial === 2) software[i].commercial = _.freemium;
+
+        if (['test', 'test-download', 'test-install', 'check'].includes(mode)) {
+          // go-on
+        } else if (_.specialMode[i] === -1) {
+          continue;
+        } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode === -1)) {
+          continue;
+        } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode === -1)) {
+          continue;
+        }
+
+        // 扩展为标准格式
+        software[i] = ExtendSoftware(software[i]);
+
+        if (software[i].fixedPath instanceof Array) {
+          const pathes = software[i].fixedPath;
+          let folder = getPath(pathes[0]);
+          for (let o = 1; o < pathes.length; o++) {
+            if (!fse.existsSync(folder) || !fse.statSync(folder).isDirectory()) break;
+
+            if (typeof pathes[o] === 'string') {
+              folder = path.resolve(folder, pathes[o]);
+              continue;
+            }
+
+            let files = fse.readdirSync(folder);
+            if (pathes[o] instanceof RegExp) {
+              files = files.filter(i => i.match(pathes[o]));
+            } else {
+              break;
+            }
+
+            if (o === pathes.length - 1) {
+              files = files.filter(i => fse.statSync(path.resolve(folder, i)).isFile());
+            } else {
+              files = files.filter(i => fse.statSync(path.resolve(folder, i)).isDirectory());
+            }
+            if (files.length === 0) break;
+            folder = path.resolve(folder, files[0]);
+          }
+          software[i].fixedPath = folder;
+        }
+
+        if (!(i in database)) database[i] = {};
+        if (['test-install'].includes(mode) && !_.software[i]) {
+          _.software[i] = path.resolve(_.rootPath, iEscaped, software[i].preferPath || path.basename(iEscaped) + '.exe');
+        }
+        _.software[i] = (software[i].fixedPath || _.software[i]) ? getPath(software[i].fixedPath || _.software[i]) : '';
+        let iPath = path.resolve(_.rootPath, _.software[i]);
+        if (iPath.match(/\|/)) {
+          software[i].parentPath = iPath.split(/\|/)[0];
+          iPath = iPath.replace(/\|/g, '\\');
         } else {
-          break;
+          let parentPath = path.dirname(iPath);
+          while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
+            parentPath = path.parse(parentPath).dir;
+          }
+          software[i].parentPath = parentPath;
+        }
+        software[i].path = iPath;
+
+        if (_.openInstaller && !software[i].install) {
+          software[i].install = info => {
+            console.log(`Install-Path:\t${info.parentPath}`);
+            return info.fns.install.cli(info, null, [], { wait: true });
+          };
         }
 
-        if (o === pathes.length - 1) {
-          files = files.filter(i => fse.statSync(path.resolve(folder, i)).isFile());
+        const isModeDefault = mode === 'default';
+        const isUpdateRecently = (new Date().getTime() - new Date(database[i].lasttime || 0).getTime() < _.checkInterval * 24 * 60 * 60 * 1000);
+        const fileExists = fse.existsSync(iPath);
+        if (isModeDefault && isUpdateRecently && fileExists) continue;
+
+        process.title = i;
+
+        let version;
+        const versionLocal = await getVersion(iPath);
+        if (['test', 'test-download', 'test-install', 'check', 'backup'].includes(mode) || !fse.existsSync(iPath)) {
+          version = null;
+        } else if ('version' in database[i]) {
+          if (database[i].md5 === getHash(iPath, 'md5')) {
+            version = database[i].version;
+          } else {
+            version = versionLocal;
+          }
+          // version = versionMax(database[i].version, versionLocal) ? database[i].version : versionLocal
         } else {
-          files = files.filter(i => fse.statSync(path.resolve(folder, i)).isDirectory());
+          version = versionLocal;
         }
-        if (files.length === 0) break;
-        folder = path.resolve(folder, files[0]);
-      }
-      software[i].fixedPath = folder;
-    }
 
-    if (!(i in database)) database[i] = {};
-    if (['test-install'].includes(mode) && !_.software[i]) {
-      _.software[i] = path.resolve(_.rootPath, iEscaped, software[i].preferPath || path.basename(iEscaped) + '.exe');
-    }
-    _.software[i] = (software[i].fixedPath || _.software[i]) ? getPath(software[i].fixedPath || _.software[i]) : '';
-    let iPath = path.resolve(_.rootPath, _.software[i]);
-    if (iPath.match(/\|/)) {
-      software[i].parentPath = iPath.split(/\|/)[0];
-      iPath = iPath.replace(/\|/g, '\\');
-    } else {
-      let parentPath = path.dirname(iPath);
-      while (parentPath.toLowerCase().split(/[/\\]+/).includes('bin')) {
-        parentPath = path.parse(parentPath).dir;
-      }
-      software[i].parentPath = parentPath;
-    }
-    software[i].path = iPath;
+        console.log('\n- - - - - - - - - - -\n');
+        console.log(`Software:\t${i}`);
+        if (['test', 'test-download', 'test-install'].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', software[i].file)}`);
+        console.log(`Location:\t${iPath}`);
+        console.log(`Version:\t${version}`);
 
-    if (_.openInstaller && !software[i].install) {
-      software[i].install = info => {
-        console.log(`Install-Path:\t${info.parentPath}`);
-        return info.fns.install.cli(info, null, [], { wait: true });
-      };
-    }
-
-    const isModeDefault = mode === 'default' && args.length === 0;
-    const isUpdateRecently = (new Date().getTime() - new Date(database[i].lasttime || 0).getTime() < _.checkInterval * 24 * 60 * 60 * 1000);
-    const fileExists = fse.existsSync(iPath);
-    if (isModeDefault && isUpdateRecently && fileExists) continue;
-
-    process.title = i;
-
-    let version;
-    const versionLocal = await getVersion(iPath);
-    if (['test', 'test-download', 'test-install', 'check', 'backup'].includes(mode) || !fse.existsSync(iPath)) {
-      version = null;
-    } else if ('version' in database[i]) {
-      if (database[i].md5 === getHash(iPath, 'md5')) {
-        version = database[i].version;
-      } else {
-        version = versionLocal;
-      }
-      // version = versionMax(database[i].version, versionLocal) ? database[i].version : versionLocal
-    } else {
-      version = versionLocal;
-    }
-
-    console.log('\n- - - - - - - - - - -\n');
-    console.log(`Software:\t${i}`);
-    if (['test', 'test-download', 'test-install'].includes(mode) || _.debug) console.log(`File:\t${path.join(__dirname, 'software', iRaw + '.js')}`);
-    console.log(`Location:\t${iPath}`);
-    console.log(`Version:\t${version}`);
-
-    // install mode
-    if (['install'].includes(mode) && 'install' in software[i]) {
-      if (fse.existsSync(iPath) && !versionMax(database[i].version, versionLocal)) continue;
-      const name = `${iEscaped}-${database[i].version}`;
-      const filter = fse.readdirSync(_.archivePath).filter(j => path.parse(j).name === name);
-      if (filter.length === 0) {
-        console.error(`Error:\tOutput "${name}" is not found`);
-        continue;
-      }
-      const output = path.resolve(_.archivePath, filter[0]);
-      await installLatestVersion(i, output);
-      continue;
-    }
-
-    // check version
-    software[i].retry = 0;
-    const siteList = 'site' in software[i] ? Object.keys(software[i].site) : [];
-    let siteNow;
-    let result;
-    result = software[i].url ? await getLatestVersion(i) : null;
-    while (!result && siteList.length) {
-      if (siteList.indexOf(siteNow) + 1 === siteList.length) {
-        break;
-      } else {
-        siteNow = siteList[siteList.indexOf(siteNow) + 1];
-        software[i].url = software[i].site[siteNow];
-
-        let info = require('./templates/' + siteNow);
-        if (info.url && typeof info.url === 'function') software[i].url = await info.url(software[i].url);
-        info = ExtendSoftware(info);
-        const preserve = ['useProxy', 'withoutHeader', 'version', 'changelog'];
-        for (const key of preserve) {
-          software[i][key] = info[key] || software[i][key];
+        // install mode
+        if (['install'].includes(mode) && 'install' in software[i]) {
+          if (fse.existsSync(iPath) && !versionMax(database[i].version, versionLocal)) continue;
+          const name = `${iEscaped}-${database[i].version}`;
+          const filter = fse.readdirSync(_.archivePath).filter(j => path.parse(j).name === name);
+          if (filter.length === 0) {
+            console.error(`Error:\tOutput "${name}" is not found`);
+            continue;
+          }
+          const output = path.resolve(_.archivePath, filter[0]);
+          await installLatestVersion(i, output);
+          continue;
         }
-        if (info.download && (!software[i].download || !software[i].download.plain)) software[i].download = info.download;
-        console.log(`Site:\t${siteNow}`);
-        result = await getLatestVersion(i);
-      }
-    }
-    if (!result) continue;
-    const { version: versionLatest, res, $ } = result;
 
-    database[i].lasttime = getNow();
-    console.log(`Latest-Version:\t${versionLatest}`);
-    process.title = `${i}-v${versionLatest}`;
+        // check version
+        software[i].retry = 0;
+        const siteList = 'site' in software[i] ? Object.keys(software[i].site) : [];
+        let siteNow;
+        let result;
+        result = software[i].url ? await getLatestVersion(i) : null;
+        while (!result && siteList.length) {
+          if (siteList.indexOf(siteNow) + 1 === siteList.length) {
+            break;
+          } else {
+            siteNow = siteList[siteList.indexOf(siteNow) + 1];
+            software[i].url = software[i].site[siteNow];
 
-    if (['check'].includes(mode)) {
-      database[i].md5 = getHash(iPath, 'md5');
-      database[i].version = versionLatest;
-      continue;
-    } else if (version === null || versionMax(versionLatest, version)) { // new version
-      replace.init({
-        version: versionLatest
-      });
-    } else { // no new version
-      if (_.saveVersion) {
-        database[i].md5 = getHash(iPath, 'md5');
-        database[i].version = versionLatest;
-      }
-      continue;
-    }
-
-    if (software[i].changelog) {
-      const changelog = await getLatestVersionChangelog(i, versionLatest, res, $);
-      if (changelog && typeof changelog === 'string') console.log(`Changelog:\t${changelog.replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim()}`);
-    }
-
-    if (['default', 'filter'].includes(mode)) {
-      notifier.notify({
-        title: `Software:\t${i}`,
-        message: `Latest Version:\t${versionLatest}`,
-        open: software[i].url,
-        timeout: 3
-      });
-    }
-
-    if (['default', 'filter'].includes(mode) && !_.preserveOldArchive) {
-      const name = iEscaped;
-      const files = walk(_.archivePath, { fullpath: false }).filter(raw => {
-        let fileName = raw.replace(/\\/g, '/');
-        while (exts.concat(exts2, '.json').includes(path.extname(fileName))) {
-          fileName = path.parse(fileName).dir ? path.parse(fileName).dir + '/' + path.parse(fileName).name : path.parse(fileName).name;
+            let info = require('./templates/' + siteNow);
+            if (info.url && typeof info.url === 'function') software[i].url = await info.url(software[i].url);
+            info = ExtendSoftware(info);
+            const preserve = ['useProxy', 'withoutHeader', 'version', 'changelog'];
+            for (const key of preserve) {
+              software[i][key] = info[key] || software[i][key];
+            }
+            if (info.download && (!software[i].download || !software[i].download.plain)) software[i].download = info.download;
+            console.log(`Site:\t${siteNow}`);
+            result = await getLatestVersion(i);
+          }
         }
-        if (database[i] && versionLatest !== database[i].version && fileName === name + '-' + database[i].version) { // 之前记录的版本
-          const file = path.resolve(_.archivePath, raw);
-          fse.removeSync(file);
-          console.warn(`Removed:\t${file}`);
-          return false;
+        if (!result) continue;
+        const { version: versionLatest, res, $ } = result;
+
+        database[i].lasttime = getNow();
+        console.log(`Latest-Version:\t${versionLatest}`);
+        process.title = `${i}-v${versionLatest}`;
+
+        if (['check'].includes(mode)) {
+          database[i].md5 = getHash(iPath, 'md5');
+          database[i].version = versionLatest;
+          continue;
+        } else if (version === null || versionMax(versionLatest, version)) { // new version
+          replace.init({
+            version: versionLatest
+          });
+        } else { // no new version
+          if (_.saveVersion) {
+            database[i].md5 = getHash(iPath, 'md5');
+            database[i].version = versionLatest;
+          }
+          continue;
         }
-        return fileName.indexOf(name) === 0 && fileName.includes(name + '-') && fileName !== name + '-' + versionLatest;
-      });
-      for (let file of files) {
-        file = path.resolve(_.archivePath, file);
-        if (readlineSync.keyInYNStrict(`Delete:\t${file}`)) fse.removeSync(file);
+
+        if (software[i].changelog) {
+          const changelog = await getLatestVersionChangelog(i, versionLatest, res, $);
+          if (changelog && typeof changelog === 'string') console.log(`Changelog:\t${changelog.replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim()}`);
+        }
+
+        if (['default', 'filter'].includes(mode)) {
+          notifier.notify({
+            title: `Software:\t${i}`,
+            message: `Latest Version:\t${versionLatest}`,
+            open: software[i].url,
+            timeout: 3
+          });
+        }
+
+        if (['default', 'filter'].includes(mode) && !_.preserveOldArchive) {
+          const name = iEscaped;
+          const files = walk(_.archivePath, { fullpath: false }).filter(raw => {
+            let fileName = raw.replace(/\\/g, '/');
+            while (exts.concat(exts2, '.json').includes(path.extname(fileName))) {
+              fileName = path.parse(fileName).dir ? path.parse(fileName).dir + '/' + path.parse(fileName).name : path.parse(fileName).name;
+            }
+            if (database[i] && versionLatest !== database[i].version && fileName === name + '-' + database[i].version) { // 之前记录的版本
+              const file = path.resolve(_.archivePath, raw);
+              fse.removeSync(file);
+              console.warn(`Removed:\t${file}`);
+              return false;
+            }
+            return fileName.indexOf(name) === 0 && fileName.includes(name + '-') && fileName !== name + '-' + versionLatest;
+          });
+          for (let file of files) {
+            file = path.resolve(_.archivePath, file);
+            if (readlineSync.keyInYNStrict(`Delete:\t${file}`)) fse.removeSync(file);
+          }
+        }
+
+        if (_.specialMode[i] > 0 && 'download' in software[i]) {
+          // go-on
+        } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode > 0) && 'download' in software[i]) {
+          // go-on
+        } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode > 0) && 'download' in software[i]) {
+          // go-on
+        } else if (['test', 'test-download', 'test-install'].includes(mode) && 'download' in software[i]) {
+          // go-on
+        } else if (['test', 'test-download', 'test-install'].includes(mode) && !('download' in software[i])) {
+          continue;
+        } else if (['backup'].includes(mode)) {
+          continue;
+        } else { // open url
+          if (software[i].commercial) console.warn('Notice:\tCommercial Software');
+          if (readlineSync.keyInYNStrict(`Open:\t${software[i].url}`)) cp.execSync(`start "" "${software[i].url}"`);
+          continue;
+        }
+
+        // download
+        result = await downloadLatestVersion(i, versionLatest, res, $);
+        if (!result || ['test-download'].includes(mode)) continue;
+        const { output } = result;
+
+        if (_.specialMode[i] >= 2 && 'install' in software[i]) {
+          // go-on
+        } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode >= 2) && 'install' in software[i]) {
+          // go-on
+        } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode >= 2) && 'install' in software[i]) {
+          // go-on
+        } else if (['test-install'].includes(mode) && 'install' in software[i]) {
+          // go-on
+        } else if (['test-install'].includes(mode) && !('install' in software[i])) {
+          continue;
+        } else {
+          console.warn('Warn:\tYou should install it yourself.');
+          if (!_.ignoreWarn.mode1 && readlineSync.keyInYNStrict(`Show:\t${output}`)) cp.execSync(`start "" "explorer" /select,"${output}"`);
+          continue;
+        }
+
+        // virus check
+        let safe;
+        if (_.virus.apiKey) {
+          safe = await virusCheckFile(output);
+        } else if (_.ignoreWarn.withoutVirusScan || readlineSync.keyInYNStrict(`File:\t${output}\nWarn:\tFile is not scaned to check virus\nContinue to install anymore?`)) {
+          safe = true;
+        }
+        if (!safe || typeof safe === 'string') {
+          console.error(`Error:\tSkipped "${safe || 'Not Safe'}"`);
+          continue;
+        }
+
+        // install
+        const installed = await installLatestVersion(i, output);
+        if (installed) database[i].lastupdatetime = getNow();
+        if (installed && _.saveVersion) {
+          database[i].md5 = getHash(iPath, 'md5');
+          database[i].version = versionLatest;
+        }
       }
-    }
+    });
 
-    if (_.specialMode[i] > 0 && 'download' in software[i]) {
-      // go-on
-    } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode > 0) && 'download' in software[i]) {
-      // go-on
-    } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode > 0) && 'download' in software[i]) {
-      // go-on
-    } else if (['test', 'test-download', 'test-install'].includes(mode) && 'download' in software[i]) {
-      // go-on
-    } else if (['test', 'test-download', 'test-install'].includes(mode) && !('download' in software[i])) {
-      continue;
-    } else if (['backup'].includes(mode)) {
-      continue;
-    } else { // open url
-      if (software[i].commercial) console.warn('Notice:\tCommercial Software');
-      if (readlineSync.keyInYNStrict(`Open:\t${software[i].url}`)) cp.execSync(`start "" "${software[i].url}"`);
-      continue;
-    }
+  await program.parseAsync(process.argv);
+};
 
-    // download
-    result = await downloadLatestVersion(i, versionLatest, res, $);
-    if (!result || ['test-download'].includes(mode)) continue;
-    const { output } = result;
-
-    if (_.specialMode[i] >= 2 && 'install' in software[i]) {
-      // go-on
-    } else if (_.specialMode[i] === undefined && (!software[i].commercial && _.mode >= 2) && 'install' in software[i]) {
-      // go-on
-    } else if (_.specialMode[i] === undefined && (software[i].commercial && _.commercialMode >= 2) && 'install' in software[i]) {
-      // go-on
-    } else if (['test-install'].includes(mode) && 'install' in software[i]) {
-      // go-on
-    } else if (['test-install'].includes(mode) && !('install' in software[i])) {
-      continue;
-    } else {
-      console.warn('Warn:\tYou should install it yourself.');
-      if (!_.ignoreWarn.mode1 && readlineSync.keyInYNStrict(`Show:\t${output}`)) cp.execSync(`start "" "explorer" /select,"${output}"`);
-      continue;
-    }
-
-    // virus check
-    let safe;
-    if (_.virus.apiKey) {
-      safe = await virusCheckFile(output);
-    } else if (_.ignoreWarn.withoutVirusScan || readlineSync.keyInYNStrict(`File:\t${output}\nWarn:\tFile is not scaned to check virus\nContinue to install anymore?`)) {
-      safe = true;
-    }
-    if (!safe || typeof safe === 'string') {
-      console.error(`Error:\tSkipped "${safe || 'Not Safe'}"`);
-      continue;
-    }
-
-    // install
-    const installed = await installLatestVersion(i, output);
-    if (installed) database[i].lastupdatetime = getNow();
-    if (installed && _.saveVersion) {
-      database[i].md5 = getHash(iPath, 'md5');
-      database[i].version = versionLatest;
-    }
-  }
-
-  return true;
-}
-
-init().then(result => {
+main().then(result => {
   doBeforeExit();
 
   if (result) console.log('\n- - - - - - - - - - -\n');
