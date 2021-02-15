@@ -16,7 +16,7 @@
     "fs-extra": "8.1.0",
     "html-to-text": "5.1.1",
     "iconv-lite": "0.5.1",
-    "node-notifier": "6.0.0",
+    "node-notifier": "8.0.1",
     "readline-sync": "1.4.10",
     "request": "2.88.0",
     "request-promise": "4.2.5",
